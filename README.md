@@ -1,6 +1,6 @@
 # Large Scale Distributed Parallel MCTS algorithm
 This project developed highly scalable distributed parallel MCTS algorithms and their applications for molecular design probelm. 
-Check the paper for details: [Practical Large-Scale Distributed Parallel Monte-Carlo Tree Search Applied to Molecular Design.](https://arxiv.org/abs/2006.10504)
+Check the paper for details: [Practical Massively Parallel Monte-Carlo Tree Search Applied to Molecular Design.](https://arxiv.org/abs/2006.10504)
 # Requirements
 The code was tested on Linux and MacOS, we recommend using anaconda to install the following softwares.
 1. [Python](https://www.anaconda.com/products/individual)(version 3.7.4)
