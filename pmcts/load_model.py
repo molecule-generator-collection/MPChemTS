@@ -43,7 +43,9 @@ def prepare_data(smiles, all_smile):
 
 
 def loaded_logp_model():
-    json_file = open('models/logpmodel/model.json', 'r')
+#    json_file = open('models/logpmodel/model.json', 'r')
+    json_file = open('models/logpmodel/model_nopad.json', 'r')
+
     loaded_model_json = json_file.read()
     json_file.close()
     loaded_model = model_from_json(loaded_model_json)

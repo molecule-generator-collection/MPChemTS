@@ -21,8 +21,9 @@ def chem_kn_simulation(model, state, val, max_len):
         get_int_old.append(val.index(position[j]))
     get_int = get_int_old
     x = np.reshape(get_int, (1, len(get_int)))
-    x_pad = sequence.pad_sequences(x, maxlen=max_len, dtype='int32',
-                                   padding='post', truncating='pre', value=0.)
+    x_pad = x
+#    x_pad = sequence.pad_sequences(x, maxlen=max_len, dtype='int32',
+#                                   padding='post', truncating='pre', value=0.)
     while not get_int[-1] == val.index(end):
         predictions = model.predict(x_pad)
         preds = np.asarray(predictions[0][len(get_int) - 1]).astype('float64')
@@ -32,8 +33,9 @@ def chem_kn_simulation(model, state, val, max_len):
         next_int = np.argmax(next_probas)
         get_int.append(next_int)
         x = np.reshape(get_int, (1, len(get_int)))
-        x_pad = sequence.pad_sequences(x, maxlen=max_len, dtype='int32', padding='post',
-                                    truncating='pre', value=0.)
+        x_pad = x
+#        x_pad = sequence.pad_sequences(x, maxlen=max_len, dtype='int32', padding='post',
+#                                    truncating='pre', value=0.)
         if len(get_int) > max_len:
             break
     total_generated.append(get_int)

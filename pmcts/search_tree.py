@@ -59,8 +59,9 @@ class Tree_Node(simulator):
             get_int_old.append(self.val.index(position[j]))
         get_int = get_int_old
         x = np.reshape(get_int, (1, len(get_int)))
-        x_pad = sequence.pad_sequences(x, maxlen=self.max_len, dtype='int32',
-                                       padding='post', truncating='pre', value=0.)
+        x_pad = x
+#        x_pad = sequence.pad_sequences(x, maxlen=self.max_len, dtype='int32',
+#                                       padding='post', truncating='pre', value=0.)
         predictions = model.predict(x_pad)
         preds = np.asarray(predictions[0][len(get_int) - 1]).astype('float64')
         preds = np.log(preds) / 1.0

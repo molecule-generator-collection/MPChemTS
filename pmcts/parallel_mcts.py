@@ -137,8 +137,8 @@ class p_mcts:
 
                     else:  # if node already in the local hashtable
                         node = hsm.search_table(message[0])
-                        print("debug:", node.visits,
-                              node.num_thread_visited, node.wins)
+                        #print("debug:", node.visits,
+                        #      node.num_thread_visited, node.wins)
                         if node.state == ['&']:
                             if node.expanded_nodes != []:
                                 m = random.choice(node.expanded_nodes)
@@ -506,7 +506,7 @@ class p_mcts:
                 jobq.appendleft(root_job)
         while not timeup:
             if rank == 0:
-                if time.time()-start_time > 60:
+                if time.time()-start_time > 20:
                     timeup = True
                     for dest in range(1, nprocs):
                         dummy_data = tag = JobType.TIMEUP.value
@@ -587,7 +587,7 @@ class p_mcts:
                                                        dest=dest,tag=JobType.SEARCH.value)
                         else:
                             node.path_ucb = message[5]
-                            print("check ucb:", node.wins, node.visits, node.num_thread_visited)
+                            #print("check ucb:", node.wins, node.visits, node.num_thread_visited)
                             if len(node.state) < node.max_len:
                                 if node.state[-1] != '\n':
                                     if node.expanded_nodes != []:
