@@ -7,7 +7,7 @@ import random as pr
 
 from pmcts.property_simulator import simulator
 from pmcts import sascorer
-from pmcts.rollout import chem_kn_simulation, predict_smile, make_input_smile
+from pmcts.rollout import chem_kn_simulation, chem_kn_simulation_stateful, predict_smile, make_input_smile
 
 class Tree_Node(simulator):
     """
@@ -62,8 +62,10 @@ class Tree_Node(simulator):
         x_pad = x
 #        x_pad = sequence.pad_sequences(x, maxlen=self.max_len, dtype='int32',
 #                                       padding='post', truncating='pre', value=0.)
+        model.reset_states()
         predictions = model.predict(x_pad)
-        preds = np.asarray(predictions[0][len(get_int) - 1]).astype('float64')
+        preds = np.asarray(predictions[0]).astype('float64')
+    #    preds = np.asarray(predictions[0][len(get_int) - 1]).astype('float64')
         preds = np.log(preds) / 1.0
         preds = np.exp(preds) / np.sum(np.exp(preds))
         sort_index = np.argsort(-preds)
@@ -94,7 +96,8 @@ class Tree_Node(simulator):
         self.reward = score
 
     def simulation(self, chem_model, state, rank, gauid):
-        all_posible = chem_kn_simulation(chem_model, state, self.val, self.max_len)
+#        all_posible = chem_kn_simulation(chem_model, state, self.val, self.max_len)
+        all_posible = chem_kn_simulation_stateful(chem_model, state, self.val, self.max_len)
         generate_smile = predict_smile(all_posible, self.val)
         new_compound = make_input_smile(generate_smile)
         score, mol= self.run_simulator(new_compound,rank)

@@ -506,7 +506,7 @@ class p_mcts:
                 jobq.appendleft(root_job)
         while not timeup:
             if rank == 0:
-                if time.time()-start_time > 20:
+                if time.time()-start_time > 60:
                     timeup = True
                     for dest in range(1, nprocs):
                         dummy_data = tag = JobType.TIMEUP.value

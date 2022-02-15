@@ -42,6 +42,42 @@ def chem_kn_simulation(model, state, val, max_len):
     all_posible.extend(total_generated)
     return all_posible
 
+def chem_kn_simulation_stateful(model, state, val, max_len):
+    all_posible = []
+    end = "\n"
+    position = []
+    position.extend(state)
+    total_generated = []
+    new_compound = []
+    get_int_old = []
+    for j in range(len(position)):
+        get_int_old.append(val.index(position[j]))
+    get_int = get_int_old
+    x = np.reshape(get_int, (1, len(get_int)))
+    model.reset_states()
+    x_pad = x
+#    x_pad = sequence.paddd_sequences(x, maxlen=max_len, dtype='int32',
+#                                   padding='post', truncating='pre', value=0.)
+    while not get_int[-1] == val.index(end):
+        predictions = model.predict(x_pad)
+        preds = np.asarray(predictions[0]).astype('float64')
+#        preds = np.asarray(predictions[0][len(get_int) - 1]).astype('float64')
+        preds = np.log(preds) / 1.0
+        preds = np.exp(preds) / np.sum(np.exp(preds))
+        next_probas = np.random.multinomial(1, preds, 1)
+        next_int = np.argmax(next_probas)
+        get_int.append(next_int)
+#        x = np.reshape(get_int, (1, len(get_int)))
+        x = np.reshape([next_int], (1, 1))
+        x_pad = x
+#        x_pad = sequence.pad_sequences(x, maxlen=max_len, dtype='int32', padding='post',
+#                                    truncating='pre', value=0.)
+        if len(get_int) > max_len:
+            break
+    total_generated.append(get_int)
+    all_posible.extend(total_generated)
+    return all_posible
+
 
 def predict_smile(all_posible, val):
     new_compound = []

@@ -41,6 +41,20 @@ def prepare_data(smiles, all_smile):
 
     return X_train, y_train
 
+def stateful_logp_model():
+    vocab_size=64 #len(vocabulary)
+    embed_size=64 #len(vocabulary)
+
+    N=1 #X.shape[1]
+    model = Sequential()
+
+    model.add(Embedding(input_dim=vocab_size, output_dim=vocab_size, batch_size=1, mask_zero=False))
+    model.add(GRU(output_dim=256, batch_input_shape=(1,None,64),activation='sigmoid',return_sequences=True, stateful=True))
+    model.add(GRU(256,activation='sigmoid',return_sequences=False, stateful=True))
+    model.add(Dense(embed_size, activation='softmax'))
+    model.load_weights('models/logpmodel/model.h5')
+    return model
+
 
 def loaded_logp_model():
 #    json_file = open('models/logpmodel/model.json', 'r')
