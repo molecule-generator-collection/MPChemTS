@@ -1,4 +1,3 @@
-from keras.preprocessing import sequence
 from pmcts import sascorer
 from rdkit import Chem
 from rdkit.Chem import Descriptors
@@ -12,7 +11,6 @@ class simulator:
     """
     def __init__(self, property):
         self.property=property
-        #print (self.property)
         if self.property=="logP":
             self.val=['\n', '&', 'C', '(', ')', 'c', '1', '2', 'o', '=', 'O', 'N', '3', 'F', '[C@@H]',
                 'n', '-', '#', 'S', 'Cl', '[O-]', '[C@H]', '[NH+]', '[C@]', 's', 'Br', '/',
@@ -21,17 +19,10 @@ class simulator:
                 '[P@@H]', '[P@@]', '[PH2]', '[P@]', '[P+]', '[S+]', '[o+]', '[CH2-]', '[CH-]',
                 '[SH+]', '[O+]', '[s+]', '[PH+]', '[PH]', '8', '[S@@+]']
             self.max_len=82
-        if self.property=="wavelength":
-            self.val=['\n', '&', 'C', '[C@@H]', '(', 'N', ')', 'O', '=', '1', '/', 'c', 'n', '[nH]',
-                '[C@H]', '2', '[NH]', '[C]', '[CH]', '[N]', '[C@@]', '[C@]', 'o', '[O]', '3', '#',
-                '[O-]', '[n+]', '[N+]', '[CH2]', '[n]']
-            self.max_len=42
 
     def run_simulator(self, new_compound, rank):
         if self.property=="logP":
             score,mol=self.logp_evaluator(new_compound, rank)
-        if self.property=="wavelength":
-            score,mol=self.wavelength_evaluator(new_compound, rank)
         return score, mol
 
     def logp_evaluator(self, new_compound, rank):
@@ -67,33 +58,4 @@ class simulator:
             score = score_one / (1 + abs(score_one))
         else:
             score = -1000 / (1 + 1000)
-        return score, new_compound[0]
-
-    def wavelength_evaluator(self, new_compound, rank):
-        ind=rank
-        try:
-            m = Chem.MolFromSmiles(str(new_compound[0]))
-        except:
-            m= None
-        if m!= None:
-#            stable = tansfersdf(str(new_compound[0]),ind)
-            if stable == 1.0:
-                try:
-                    SDFinput = 'CheckMolopt'+str(ind)+'.sdf'
-                    #calc_sdf = GaussianDFTRun('B3LYP', '3-21G*', 1, 'uv homolumo', SDFinput, 0)
-                    outdic = calc_sdf.run_gaussian()
-                    wavelength = outdic['uv'][0]
-                except:
-                    wavelength = None
-            else:
-                wavelength = None
-            if wavelength != None and wavelength != []:
-                wavenum = wavelength[0]
-                gap = outdic['gap'][0]
-                lumo = outdic['gap'][1]
-                score = 0.01*wavenum/(1+0.01*abs(wavenum))
-            else:
-                score = -1
-        else:
-            score = -1
         return score, new_compound[0]
