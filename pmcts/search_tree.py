@@ -4,7 +4,7 @@ from math import log, sqrt
 import random as pr
 
 from pmcts.property_simulator import simulator
-from pmcts.rollout import chem_kn_simulation, chem_kn_simulation_stateful, predict_smile, make_input_smile
+from pmcts.rollout import chem_kn_simulation, predict_smile, make_input_smile
 
 class Tree_Node(simulator):
     """
@@ -91,7 +91,7 @@ class Tree_Node(simulator):
 
     def simulation(self, chem_model, state, rank, gauid):
 #        all_posible = chem_kn_simulation(chem_model, state, self.val, self.max_len)
-        all_posible = chem_kn_simulation_stateful(chem_model, state, self.val, self.max_len)
+        all_posible = chem_kn_simulation(chem_model, state, self.val, self.max_len)
         generate_smile = predict_smile(all_posible, self.val)
         new_compound = make_input_smile(generate_smile)
         score, mol= self.run_simulator(new_compound,rank)
