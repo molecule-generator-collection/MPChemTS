@@ -1,3 +1,5 @@
+import pickle
+
 from pmcts import sascorer
 from rdkit import Chem
 from rdkit.Chem import Descriptors
@@ -12,12 +14,8 @@ class simulator:
     def __init__(self, property):
         self.property=property
         if self.property=="logP":
-            self.val=['\n', '&', 'C', '(', ')', 'c', '1', '2', 'o', '=', 'O', 'N', '3', 'F', '[C@@H]',
-                'n', '-', '#', 'S', 'Cl', '[O-]', '[C@H]', '[NH+]', '[C@]', 's', 'Br', '/',
-                '[nH]', '[NH3+]', '4', '[NH2+]', '[C@@]', '[N+]', '[nH+]', '\\', '[S@]', '5',
-                '[N-]', '[n+]', '[S@@]', '[S-]', '6', '7', 'I', '[n-]', 'P', '[OH+]', '[NH-]',
-                '[P@@H]', '[P@@]', '[PH2]', '[P@]', '[P+]', '[S+]', '[o+]', '[CH2-]', '[CH-]',
-                '[SH+]', '[O+]', '[s+]', '[PH+]', '[PH]', '8', '[S@@+]']
+            with open('model/tokens.pkl', 'rb') as f:
+                self.val = pickle.load(f)
             self.max_len=82
 
     def run_simulator(self, new_compound, rank):
