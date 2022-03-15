@@ -1,6 +1,11 @@
 import csv
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
 import random
+
 import numpy as np
+from rdkit import RDLogger
+
 from mpi4py import MPI
 from pmcts.load_model import stateful_logp_model
 from pmcts.zobrist_hash import Item, HashTable
@@ -9,9 +14,14 @@ from pmcts.parallel_mcts import p_mcts
 
 
 if __name__ == "__main__":
+    debug = False
+    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+    if not debug:
+        RDLogger.DisableLog("rdApp.*")
     """
     Initialize MPI environment
     """
+    print("Initialize MPI environment")
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     nprocs = comm.Get_size()
@@ -20,9 +30,10 @@ if __name__ == "__main__":
     MPI.Attach_buffer(mem)
 
     """
-    Load the pre-trained RNN model and define the property optimized:
+    load the pre-trained rnn model and define the property optimized:
     currently available properties: logP (rdkit) and wavelength (DFT)
     """
+    print('load the pre-trained rnn model and define the property optimized')
     chem_model = stateful_logp_model()
     property = "logP"
     node = Tree_Node(state=['&'], property=property)
@@ -30,12 +41,14 @@ if __name__ == "__main__":
     """
     Initialize HashTable
     """
+    print('Initialize HashTable')
     random.seed(3)
     hsm = HashTable(nprocs, node.val, node.max_len, len(node.val))
 
     """
     Design molecules using parallel MCTS: TDS-UCT,TDS-df-UCT and MP-MCTS
     """
+    print('Run MPChemTS')
     comm.barrier()
     #score,mol=p_mcts.TDS_UCT(chem_model, hsm, property, comm)
     #score,mol=p_mcts.TDS_df_UCT(chem_model, hsm, property, comm)
