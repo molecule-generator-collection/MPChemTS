@@ -1,11 +1,3 @@
-from rdkit import Chem
-from rdkit.Chem import Draw
-from rdkit.Chem import Descriptors
-from rdkit.Chem import MolFromSmiles, MolToSmiles
-from keras.preprocessing import sequence
-from pmcts import sascorer
-import gzip
-import networkx as nx
 import numpy as np
 
 """Sampling molecules in simulation step"""
@@ -15,7 +7,6 @@ def chem_kn_simulation(model, state, val, max_len):
     position = []
     position.extend(state)
     total_generated = []
-    new_compound = []
     get_int_old = []
     for j in range(len(position)):
         get_int_old.append(val.index(position[j]))
@@ -48,7 +39,6 @@ def chem_kn_simulation_stateful(model, state, val, max_len):
     position = []
     position.extend(state)
     total_generated = []
-    new_compound = []
     get_int_old = []
     for j in range(len(position)):
         get_int_old.append(val.index(position[j]))

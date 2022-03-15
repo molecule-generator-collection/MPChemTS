@@ -1,11 +1,8 @@
 from keras.preprocessing import sequence
-#from Gaussian_DFT.RDKitText import tansfersdf
-#from Gaussian_DFT.SDF2GauInput import GauTDDFT_ForDFT
-#from Gaussian_DFT.GaussianRunPack import GaussianDFTRun
 from pmcts import sascorer
 from rdkit import Chem
 from rdkit.Chem import Descriptors
-from rdkit.Chem import MolFromSmiles, MolToSmiles
+from rdkit.Chem import MolFromSmiles
 from rdkit.Chem import rdmolops
 import networkx as nx
 

@@ -1,8 +1,7 @@
 import random
 import numpy as np
 from mpi4py import MPI
-import csv
-from pmcts.load_model import loaded_logp_model, loaded_wave_model, stateful_logp_model
+from pmcts.load_model import stateful_logp_model
 from pmcts.zobrist_hash import Item, HashTable
 from pmcts.search_tree import Tree_Node
 from pmcts.write_to_csv import wcsv
@@ -24,7 +23,6 @@ if __name__ == "__main__":
     Load the pre-trained RNN model and define the property optimized:
     currently available properties: logP (rdkit) and wavelength (DFT)
     """
-#    chem_model = loaded_logp_model()
     chem_model = stateful_logp_model()
     property = "logP"
     node = Tree_Node(state=['&'], property=property)

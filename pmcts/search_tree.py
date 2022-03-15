@@ -1,12 +1,9 @@
 
-from keras.preprocessing import sequence
-import gzip
 import numpy as np
 from math import log, sqrt
 import random as pr
 
 from pmcts.property_simulator import simulator
-from pmcts import sascorer
 from pmcts.rollout import chem_kn_simulation, chem_kn_simulation_stateful, predict_smile, make_input_smile
 
 class Tree_Node(simulator):
@@ -49,11 +46,8 @@ class Tree_Node(simulator):
     def expansion(self, model):
         state = self.state
         all_nodes = []
-        end = "\n"
         position = []
         position.extend(state)
-        total_generated = []
-        new_compound = []
         get_int_old = []
         for j in range(len(position)):
             get_int_old.append(self.val.index(position[j]))

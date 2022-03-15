@@ -1,5 +1,4 @@
 from random import randint
-import math
 
 
 class Item:

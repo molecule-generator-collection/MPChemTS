@@ -1,12 +1,6 @@
 
 import csv
-import itertools
-import operator
-import numpy as np
-import nltk
-import os
 from rdkit import Chem
-from rdkit.Chem import Draw
 from rdkit.Chem import Descriptors
 
 def get_val():
@@ -15,7 +9,6 @@ def get_val():
     length=[]
     end="\n"
     element_table=["C","N","B","O","P","S","F","Cl","Br","I","(",")","=","#","Si"]
-    ring=["1","2","3","4","5","6","7","8","9","10"]
     for i in range(len(sen_space)):
         word_space=sen_space[i]
         word=[]
@@ -61,8 +54,6 @@ def get_val():
 
     after_all_smile=all_smile
     val=["\n"]
-    delid=[]
-    all_smile_go=[]
     for i in range(len(after_all_smile)):
         for j in range(len(after_all_smile[i])):
             if after_all_smile[i][j] not in val:
@@ -91,10 +82,7 @@ def split_smiles():
         sen_space.append(row)
     f.close()
     word1=sen_space
-    end="\n"
     zinc_processed=[]
-    organic_smile=[]
-    t=0
     for i in range(len(sen_space)):
         word1=sen_space[i]
         if word1!=[]:

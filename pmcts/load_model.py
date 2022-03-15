@@ -1,26 +1,8 @@
-import csv
-import itertools
-import operator
-import numpy as np
-import nltk
-import h5py
-import os
-from datetime import datetime
 from keras.models import Sequential
-from keras.layers import Dense, Activation, TimeDistributed
-from keras.layers import LSTM, GRU
+from keras.layers import Dense
+from keras.layers import GRU
 from keras.layers.embeddings import Embedding
-from keras.optimizers import RMSprop, Adam
-from keras.utils.data_utils import get_file
-from keras.layers import Dropout
-import numpy as np
-import random
-import sys
-from keras.utils.np_utils import to_categorical
-from keras.preprocessing import sequence
 from keras.models import model_from_json
-# from tensorflow.keras.models import model_from_json
-#from make_smile import zinc_data_with_bracket_original, zinc_processed_with_bracket
 
 
 def prepare_data(smiles, all_smile):
@@ -45,7 +27,6 @@ def stateful_logp_model():
     vocab_size=64 #len(vocabulary)
     embed_size=64 #len(vocabulary)
 
-    N=1 #X.shape[1]
     model = Sequential()
 
     model.add(Embedding(input_dim=vocab_size, output_dim=vocab_size, batch_size=1, mask_zero=False))
