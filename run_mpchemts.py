@@ -1,10 +1,10 @@
+import csv
 import random
 import numpy as np
 from mpi4py import MPI
 from pmcts.load_model import stateful_logp_model
 from pmcts.zobrist_hash import Item, HashTable
 from pmcts.search_tree import Tree_Node
-from pmcts.write_to_csv import wcsv
 from pmcts.parallel_mcts import p_mcts
 
 
@@ -66,8 +66,9 @@ if __name__ == "__main__":
       comm.send(result, dest = 0, tag=999)
 
 
-#    wcsv(score, 'logp_score' + str(rank))
-#    wcsv(mol, 'logp_mol' + str(rank))
-    # wcsv(score, 'logp_dmcts_scoreForProcess' + str(rank))
-    # wcsv(mol, 'logp_dmcts_generatedMoleculesForProcess' + str(rank))
-    #wcsv(depth,'depth' + str(rank))
+    with open(f"result/logp_score{rank}.csv", 'w', newline='') as f:
+        writer = csv.writer(f, delimiter='\n')
+        writer.writerow(score)
+    with open(f"result/logp_mol{rank}.csv", 'w', newline='') as f:
+        writer = csv.writer(f, delimiter='\n')
+        writer.writerow(mol)
