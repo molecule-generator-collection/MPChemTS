@@ -3,6 +3,7 @@ import csv
 from importlib import import_module
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
+import sys
 import pickle
 import random
 import yaml
@@ -48,6 +49,8 @@ def set_default_config(conf):
         'reward_module': 'reward.logP_reward',
         'reward_class': 'LogP_reward'})
 
+    conf.setdefault('search_type', 'MP_MCTS')
+
 
 if __name__ == "__main__":
     args = get_parser()
@@ -91,9 +94,15 @@ if __name__ == "__main__":
 
     print('Run MPChemTS')
     comm.barrier()
-    #score,mol=p_mcts.TDS_UCT(chem_model, hsm, reward_calculator, comm, conf)
-    #score,mol=p_mcts.TDS_df_UCT(chem_model, hsm, reward_calculator, comm, conf)
-    score, mol = p_mcts.MP_MCTS(chem_model, hsm, reward_calculator, comm, conf)
+    if conf['search_type'] == 'TDS_UCT':
+        score, mol=p_mcts.TDS_UCT(chem_model, hsm, reward_calculator, comm, conf)
+    elif conf['search_type'] == 'TDS_df_UCT':
+        score, mol=p_mcts.TDS_df_UCT(chem_model, hsm, reward_calculator, comm, conf)
+    elif conf['search_type'] == 'MP_MCTS':
+        score, mol = p_mcts.MP_MCTS(chem_model, hsm, reward_calculator, comm, conf)
+    else:
+        print('[ERROR] Select a search type from [TDS_UCT, TDS_df_UCT, MP_MCTS]')
+        sys.exit(1)
 
     print("Done MCTS execution")
 

@@ -1,7 +1,7 @@
 output_dir: result
-#property: logP
 random_seed: 3
 token: model/tokens.pkl
+search_type: MP_MCTS
 
 model_json: model/model.tf25.json
 model_weight: model/model.tf25.best.ckpt.h5
