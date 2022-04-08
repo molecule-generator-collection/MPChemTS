@@ -29,7 +29,7 @@ def get_model_structure_info(model_json):
     return input_shape, vocab_size, output_size
 
 
-def stateful_logp_model(conf):
+def loaded_model(conf):
     vocab_size=conf['rnn_vocab_size']
     embed_size=conf['rnn_output_size']
 

@@ -10,7 +10,7 @@ import numpy as np
 from rdkit import RDLogger
 
 from mpi4py import MPI
-from pmcts.load_model import stateful_logp_model, get_model_structure_info
+from pmcts.load_model import loaded_model, get_model_structure_info
 from pmcts.zobrist_hash import HashTable
 from pmcts.search_tree import Tree_Node
 from pmcts.parallel_mcts import p_mcts
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     currently available properties: logP (rdkit) and wavelength (DFT)
     """
     print('load the pre-trained rnn model and define the property optimized')
-    chem_model = stateful_logp_model(conf)
+    chem_model = loaded_model(conf)
     property = conf['property']
     node = Tree_Node(state=['&'], property=property, conf=conf)
 
