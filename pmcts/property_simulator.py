@@ -15,7 +15,7 @@ class simulator:
         self.property=property
         if self.property=="logP":
             self.val = conf['token']
-            self.max_len=82
+            self.max_len=conf['max_len']
 
     def run_simulator(self, new_compound, rank):
         if self.property=="logP":

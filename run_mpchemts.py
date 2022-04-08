@@ -10,7 +10,7 @@ import numpy as np
 from rdkit import RDLogger
 
 from mpi4py import MPI
-from pmcts.load_model import stateful_logp_model
+from pmcts.load_model import stateful_logp_model, get_model_structure_info
 from pmcts.zobrist_hash import HashTable
 from pmcts.search_tree import Tree_Node
 from pmcts.parallel_mcts import p_mcts
@@ -42,6 +42,9 @@ def set_default_config(conf):
     conf.setdefault('random_seed', 3)
     conf.setdefault('token', 'model/tokens.pkl')
 
+    conf.setdefault('model_json', 'model.tf25.json')
+    conf.setdefault('model_weight', 'model/model.tf25.best.ckpt.h5')
+
 
 if __name__ == "__main__":
     args = get_parser()
@@ -56,6 +59,7 @@ if __name__ == "__main__":
     with open(conf['token'], 'rb') as f:
         tokens = pickle.load(f)
     conf['token'] = tokens
+    conf['max_len'], conf['rnn_vocab_size'], conf['rnn_output_size'] = get_model_structure_info(conf['model_json'])
 
     print(f"========== Configuration ==========")
     for k, v in conf.items():
@@ -79,7 +83,7 @@ if __name__ == "__main__":
     currently available properties: logP (rdkit) and wavelength (DFT)
     """
     print('load the pre-trained rnn model and define the property optimized')
-    chem_model = stateful_logp_model()
+    chem_model = stateful_logp_model(conf)
     property = conf['property']
     node = Tree_Node(state=['&'], property=property, conf=conf)
 
