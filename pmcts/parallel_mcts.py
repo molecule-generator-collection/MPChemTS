@@ -37,7 +37,7 @@ class p_mcts:
     parallel mcts algorithms includes TDS-UCT, TDS-df-UCT and MP-MCTS
     """
 
-    def TDS_UCT(chem_model, hsm, property, comm):
+    def TDS_UCT(chem_model, hsm, property, comm, conf):
         # comm.barrier()
         rank = comm.Get_rank()
         nprocs = comm.Get_size()
@@ -88,7 +88,7 @@ class p_mcts:
                 if tag == JobType.SEARCH.value:
                     # if node is not in the hash table
                     if hsm.search_table(message[0]) is None:
-                        node = Tree_Node(state=message[0], property=property)
+                        node = Tree_Node(state=message[0], property=property, conf=conf)
                         #node.state = message[0]
                         if node.state == ['&']:
                             node.expansion(chem_model)
@@ -222,7 +222,7 @@ class p_mcts:
                                            tag=JobType.BACKPROPAGATION.value)
 
                 elif tag == JobType.BACKPROPAGATION.value:
-                    node = Tree_Node(state=message[0], property=property)
+                    node = Tree_Node(state=message[0], property=property, conf=conf)
                     node.reward = message[1]
                     local_node = hsm.search_table(message[0][0:-1])
                     if local_node.state == ['&']:
@@ -252,7 +252,7 @@ class p_mcts:
 
         return allscore, allmol
 
-    def TDS_df_UCT(chem_model, hsm, property, comm):
+    def TDS_df_UCT(chem_model, hsm, property, comm, conf):
         # comm.barrier()
         rank = comm.Get_rank()
         nprocs = comm.Get_size()
@@ -301,7 +301,7 @@ class p_mcts:
                 (tag, message) = jobq.pop()
                 if tag == JobType.SEARCH.value:
                     if hsm.search_table(message[0]) == None:
-                        node = Tree_Node(state=message[0], property=property)
+                        node = Tree_Node(state=message[0], property=property, conf=conf)
                         info_table = message[5]
                         #print ("not in table info_table:",info_table)
                         if node.state == ['&']:
@@ -441,7 +441,7 @@ class p_mcts:
 
                 elif tag == JobType.BACKPROPAGATION.value:
                     bpm += 1
-                    node = Tree_Node(state=message[0], property=property)
+                    node = Tree_Node(state=message[0], property=property, conf=conf)
                     node.reward = message[1]
                     local_node = hsm.search_table(message[0][0:-1])
                     #print ("report check message[5]:",message[5])
@@ -479,7 +479,7 @@ class p_mcts:
 
         return allscore, allmol
 
-    def MP_MCTS(chem_model, hsm, property, comm):
+    def MP_MCTS(chem_model, hsm, property, comm, conf):
         #comm.barrier()
         rank = comm.Get_rank()
         nprocs = comm.Get_size()
@@ -522,7 +522,7 @@ class p_mcts:
                 (tag, message) = jobq.pop()
                 if tag == JobType.SEARCH.value:
                     if hsm.search_table(message[0]) == None:
-                        node = Tree_Node(state=message[0], property=property)
+                        node = Tree_Node(state=message[0], property=property, conf=conf)
                         if node.state == ['&']:
                             node.expansion(chem_model)
                             m = random.choice(node.expanded_nodes)
@@ -636,7 +636,7 @@ class p_mcts:
                                                        tag=JobType.BACKPROPAGATION.value)
 
                 elif tag == JobType.BACKPROPAGATION.value:
-                    node = Tree_Node(state=message[0], property=property)
+                    node = Tree_Node(state=message[0], property=property, conf=conf)
                     node.reward = message[1]
                     local_node = hsm.search_table(message[0][0:-1])
                     if local_node.state == ['&']:

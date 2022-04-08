@@ -11,11 +11,10 @@ class simulator:
     """
     logp property
     """
-    def __init__(self, property):
+    def __init__(self, property, conf):
         self.property=property
         if self.property=="logP":
-            with open('model/tokens.pkl', 'rb') as f:
-                self.val = pickle.load(f)
+            self.val = conf['token']
             self.max_len=82
 
     def run_simulator(self, new_compound, rank):

@@ -1,3 +1,4 @@
 output_dir: result
 property: logP
 random_seed: 3
+token: model/tokens.pkl

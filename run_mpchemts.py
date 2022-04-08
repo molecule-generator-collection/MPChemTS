@@ -2,6 +2,7 @@ import argparse
 import csv
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
+import pickle
 import random
 import yaml
 
@@ -39,6 +40,7 @@ def set_default_config(conf):
     conf.setdefault('output_dir', 'result')
     conf.setdefault('property', 'logP')
     conf.setdefault('random_seed', 3)
+    conf.setdefault('token', 'model/tokens.pkl')
 
 
 if __name__ == "__main__":
@@ -50,6 +52,10 @@ if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1' if args.gpu is None else args.gpu
     if not conf['debug']:
         RDLogger.DisableLog("rdApp.*")
+
+    with open(conf['token'], 'rb') as f:
+        tokens = pickle.load(f)
+    conf['token'] = tokens
 
     print(f"========== Configuration ==========")
     for k, v in conf.items():
@@ -75,7 +81,7 @@ if __name__ == "__main__":
     print('load the pre-trained rnn model and define the property optimized')
     chem_model = stateful_logp_model()
     property = conf['property']
-    node = Tree_Node(state=['&'], property=property)
+    node = Tree_Node(state=['&'], property=property, conf=conf)
 
     """
     Initialize HashTable
@@ -89,9 +95,9 @@ if __name__ == "__main__":
     """
     print('Run MPChemTS')
     comm.barrier()
-    #score,mol=p_mcts.TDS_UCT(chem_model, hsm, property, comm)
-    #score,mol=p_mcts.TDS_df_UCT(chem_model, hsm, property, comm)
-    score, mol = p_mcts.MP_MCTS(chem_model, hsm, property, comm)
+    #score,mol=p_mcts.TDS_UCT(chem_model, hsm, property, comm, conf)
+    #score,mol=p_mcts.TDS_df_UCT(chem_model, hsm, property, comm, conf)
+    score, mol = p_mcts.MP_MCTS(chem_model, hsm, property, comm, conf)
 
     print("Done MCTS execution")
 

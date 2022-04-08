@@ -10,7 +10,7 @@ class Tree_Node(simulator):
     """
     define the node in the tree
     """
-    def __init__(self, state, parentNode=None, property=property):
+    def __init__(self, state, parentNode=None, property=property, conf=None):
         self.state = state
         self.childNodes = []
         self.parentNode = parentNode
@@ -23,7 +23,8 @@ class Tree_Node(simulator):
         self.expanded_nodes = []
         self.path_ucb = []
         self.childucb = []
-        simulator.__init__(self, property)
+        self.conf = conf
+        simulator.__init__(self, property, self.conf)
     def selection(self):
         ucb = []
         for i in range(len(self.childNodes)):
@@ -79,7 +80,7 @@ class Tree_Node(simulator):
         added_nodes.extend(self.state)
         added_nodes.append(self.val[m])
         self.num_thread_visited += 1
-        n = Tree_Node(state=added_nodes, parentNode=self)
+        n = Tree_Node(state=added_nodes, parentNode=self, conf=self.conf)
         n.num_thread_visited += 1
         self.childNodes.append(n)
         return  n
