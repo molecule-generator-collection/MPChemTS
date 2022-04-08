@@ -24,6 +24,7 @@ conda create -n mpchemts python=3.7
 pip install --upgrade tensorflow==2.5
 pip install rdkit-pypi==2021.03.5
 pip install networkx
+pip install pyyaml
 conda install -c conda-forge openmpi
 conda install -c conda-forge mpi4py=3.0.3
 conda install -c conda-forge cxx-compiler mpi
@@ -34,7 +35,7 @@ conda install -c conda-forge cxx-compiler mpi
 ### optimization of logP property
 
 ```bash
-mpiexec -n 4 python example_logp.py
+mpiexec -n 4 python run_mpchemts.py --config config/setting.yaml
 ```
 
 > where 4 is the number of cores or processes to use. You can use more cores by changing 4 to 1024 for example. The example code used D-MCTS algorithm as default, you can simply change to H-MCTS for your own purpose by checking the source code of example_logp.py.
