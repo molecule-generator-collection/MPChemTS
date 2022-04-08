@@ -1,7 +1,9 @@
+import argparse
 import csv
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
 import random
+import yaml
 
 import numpy as np
 from rdkit import RDLogger
@@ -13,11 +15,48 @@ from pmcts.search_tree import Tree_Node
 from pmcts.parallel_mcts import p_mcts
 
 
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description="",
+        usage=f"python {os.path.basename(__file__)} -c CONFIG_FILE"
+    )
+    parser.add_argument(
+        "-c", "--config", type=str, required=True,
+        help="path to a config file"
+    )
+    parser.add_argument(
+        "-d", "--debug", action='store_true',
+        help="debug mode"
+    )
+    parser.add_argument(
+        "-g", "--gpu", type=str,
+        help="constrain gpu. (e.g. 0,1)"
+    )
+    return parser.parse_args()
+    
+
+def set_default_config(conf):
+    conf.setdefault('output_dir', 'result')
+    conf.setdefault('property', 'logP')
+    conf.setdefault('random_seed', 3)
+
+
 if __name__ == "__main__":
-    debug = False
-    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-    if not debug:
+    args = get_parser()
+    with open(args.config, 'r') as f:
+        conf = yaml.load(f, Loader=yaml.SafeLoader)
+    
+    conf['debug'] = args.debug
+    os.environ['CUDA_VISIBLE_DEVICES'] = '-1' if args.gpu is None else args.gpu
+    if not conf['debug']:
         RDLogger.DisableLog("rdApp.*")
+
+    print(f"========== Configuration ==========")
+    for k, v in conf.items():
+        print(f"{k}: {v}")
+    print(f"GPU devices: {os.environ['CUDA_VISIBLE_DEVICES']}")
+    print(f"===================================")
+
     """
     Initialize MPI environment
     """
@@ -35,14 +74,14 @@ if __name__ == "__main__":
     """
     print('load the pre-trained rnn model and define the property optimized')
     chem_model = stateful_logp_model()
-    property = "logP"
+    property = conf['property']
     node = Tree_Node(state=['&'], property=property)
 
     """
     Initialize HashTable
     """
     print('Initialize HashTable')
-    random.seed(3)
+    random.seed(conf['random_seed'])
     hsm = HashTable(nprocs, node.val, node.max_len, len(node.val))
 
     """
@@ -79,9 +118,11 @@ if __name__ == "__main__":
       comm.send(result, dest = 0, tag=999)
 
 
-    with open(f"result/logp_score{rank}.csv", 'w', newline='') as f:
+    output_score_path = os.path.join(conf['output_dir'], f"logp_score{rank}.csv")
+    with open(output_score_path, 'w', newline='') as f:
         writer = csv.writer(f, delimiter='\n')
         writer.writerow(score)
-    with open(f"result/logp_mol{rank}.csv", 'w', newline='') as f:
+    output_mol_path = os.path.join(conf['output_dir'], f"logp_mol{rank}.csv")
+    with open(output_mol_path, 'w', newline='') as f:
         writer = csv.writer(f, delimiter='\n')
         writer.writerow(mol)
