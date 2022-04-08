@@ -8,7 +8,7 @@ from rdkit import RDLogger
 
 from mpi4py import MPI
 from pmcts.load_model import stateful_logp_model
-from pmcts.zobrist_hash import Item, HashTable
+from pmcts.zobrist_hash import HashTable
 from pmcts.search_tree import Tree_Node
 from pmcts.parallel_mcts import p_mcts
 

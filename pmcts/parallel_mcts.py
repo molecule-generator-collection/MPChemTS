@@ -1,15 +1,13 @@
-from math import *
+#from math import *
 import time
 import random
 import numpy as np
 from copy import deepcopy
 from mpi4py import MPI
-from threading import Thread, Lock, RLock
-from queue import *
 from collections import deque
 from pmcts.check_ucbpath import backtrack_tdsdfuct, backtrack_mpmcts, compare_ucb_tdsdfuct, compare_ucb_mpmcts, update_selection_ucbtable_mpmcts, update_selection_ucbtable_tdsdfuct
 from pmcts.search_tree import Tree_Node
-from pmcts.zobrist_hash import Item, HashTable
+from pmcts.zobrist_hash import Item
 from enum import Enum
 
 """
