@@ -1,5 +1,6 @@
 import argparse
 import csv
+from importlib import import_module
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
 import pickle
@@ -38,12 +39,14 @@ def get_parser():
 
 def set_default_config(conf):
     conf.setdefault('output_dir', 'result')
-    conf.setdefault('property', 'logP')
     conf.setdefault('random_seed', 3)
     conf.setdefault('token', 'model/tokens.pkl')
 
     conf.setdefault('model_json', 'model.tf25.json')
     conf.setdefault('model_weight', 'model/model.tf25.best.ckpt.h5')
+    conf.setdefault('reward_setting', {
+        'reward_module': 'reward.logP_reward',
+        'reward_class': 'LogP_reward'})
 
 
 if __name__ == "__main__":
@@ -60,6 +63,9 @@ if __name__ == "__main__":
         tokens = pickle.load(f)
     conf['token'] = tokens
     conf['max_len'], conf['rnn_vocab_size'], conf['rnn_output_size'] = get_model_structure_info(conf['model_json'])
+
+    rs = conf['reward_setting']
+    reward_calculator = getattr(import_module(rs['reward_module']), rs['reward_class'])
 
     print(f"========== Configuration ==========")
     for k, v in conf.items():
@@ -84,8 +90,7 @@ if __name__ == "__main__":
     """
     print('load the pre-trained rnn model and define the property optimized')
     chem_model = loaded_model(conf)
-    property = conf['property']
-    node = Tree_Node(state=['&'], property=property, conf=conf)
+    node = Tree_Node(state=['&'], reward_calculator=reward_calculator, conf=conf)
 
     """
     Initialize HashTable
@@ -99,9 +104,9 @@ if __name__ == "__main__":
     """
     print('Run MPChemTS')
     comm.barrier()
-    #score,mol=p_mcts.TDS_UCT(chem_model, hsm, property, comm, conf)
-    #score,mol=p_mcts.TDS_df_UCT(chem_model, hsm, property, comm, conf)
-    score, mol = p_mcts.MP_MCTS(chem_model, hsm, property, comm, conf)
+    #score,mol=p_mcts.TDS_UCT(chem_model, hsm, reward_calculator, comm, conf)
+    #score,mol=p_mcts.TDS_df_UCT(chem_model, hsm, reward_calculator, comm, conf)
+    score, mol = p_mcts.MP_MCTS(chem_model, hsm, reward_calculator, comm, conf)
 
     print("Done MCTS execution")
 

@@ -10,7 +10,7 @@ class Tree_Node(simulator):
     """
     define the node in the tree
     """
-    def __init__(self, state, parentNode=None, property=property, conf=None):
+    def __init__(self, state, parentNode=None, reward_calculator=None, conf=None):
         self.state = state
         self.childNodes = []
         self.parentNode = parentNode
@@ -24,7 +24,7 @@ class Tree_Node(simulator):
         self.path_ucb = []
         self.childucb = []
         self.conf = conf
-        simulator.__init__(self, property, self.conf)
+        simulator.__init__(self, reward_calculator, self.conf)
     def selection(self):
         ucb = []
         for i in range(len(self.childNodes)):
@@ -95,7 +95,7 @@ class Tree_Node(simulator):
         all_posible = chem_kn_simulation(chem_model, state, self.val, self.max_len)
         generate_smile = predict_smile(all_posible, self.val)
         new_compound = make_input_smile(generate_smile)
-        score, mol= self.run_simulator(new_compound,rank)
+        score, mol= self.run_simulator(new_compound, self.conf)
         return score, mol
 
     def backpropagation(self, cnode):
