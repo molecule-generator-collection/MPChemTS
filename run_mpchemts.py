@@ -73,9 +73,6 @@ if __name__ == "__main__":
     print(f"GPU devices: {os.environ['CUDA_VISIBLE_DEVICES']}")
     print(f"===================================")
 
-    """
-    Initialize MPI environment
-    """
     print("Initialize MPI environment")
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
@@ -84,24 +81,14 @@ if __name__ == "__main__":
     mem = np.zeros(1024 * 10 * 1024)
     MPI.Attach_buffer(mem)
 
-    """
-    load the pre-trained rnn model and define the property optimized:
-    currently available properties: logP (rdkit) and wavelength (DFT)
-    """
     print('load the pre-trained rnn model and define the property optimized')
     chem_model = loaded_model(conf)
     node = Tree_Node(state=['&'], reward_calculator=reward_calculator, conf=conf)
 
-    """
-    Initialize HashTable
-    """
     print('Initialize HashTable')
     random.seed(conf['random_seed'])
     hsm = HashTable(nprocs, node.val, node.max_len, len(node.val))
 
-    """
-    Design molecules using parallel MCTS: TDS-UCT,TDS-df-UCT and MP-MCTS
-    """
     print('Run MPChemTS')
     comm.barrier()
     #score,mol=p_mcts.TDS_UCT(chem_model, hsm, reward_calculator, comm, conf)
