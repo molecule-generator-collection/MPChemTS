@@ -8,13 +8,14 @@ from rdkit.Chem import Descriptors
 from rdkit.Chem import MolFromSmiles, MolToSmiles
 from rdkit.Chem import rdmolops
 import networkx as nx
+import sys
 
 class simulator:
     """
     logp property
     """
-    def __init__(self, property):
-        self.property=property
+    def __init__(self, prop):
+        self.property=prop
         #print (self.property)
         if self.property=="logP":
             self.val=['\n', '&', 'C', '(', ')', 'c', '1', '2', 'o', '=', 'O', 'N', '3', 'F', '[C@@H]',
@@ -24,11 +25,13 @@ class simulator:
                 '[P@@H]', '[P@@]', '[PH2]', '[P@]', '[P+]', '[S+]', '[o+]', '[CH2-]', '[CH-]',
                 '[SH+]', '[O+]', '[s+]', '[PH+]', '[PH]', '8', '[S@@+]']
             self.max_len=82
-        if self.property=="wavelength":
+        elif self.property=="wavelength":
             self.val=['\n', '&', 'C', '[C@@H]', '(', 'N', ')', 'O', '=', '1', '/', 'c', 'n', '[nH]',
                 '[C@H]', '2', '[NH]', '[C]', '[CH]', '[N]', '[C@@]', '[C@]', 'o', '[O]', '3', '#',
                 '[O-]', '[n+]', '[N+]', '[CH2]', '[n]']
             self.max_len=42
+        else:
+            sys.exit(1)
 
     def run_simulator(self, new_compound, rank):
         if self.property=="logP":

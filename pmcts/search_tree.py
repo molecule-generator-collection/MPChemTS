@@ -9,24 +9,33 @@ from pmcts.property_simulator import simulator
 from pmcts import sascorer
 from pmcts.rollout import chem_kn_simulation, chem_kn_simulation_stateful, predict_smile, make_input_smile
 
+from mpi4py import MPI
+
 class Tree_Node(simulator):
     """
     define the node in the tree
     """
     def __init__(self, state, parentNode=None, property=property):
+        # todo: these should be in a numpy array
+        # MPI payload [node.state, node.reward, node.wins, node.visits, node.num_thread_visited, node.path_ucb]
         self.state = state
-        self.childNodes = []
-        self.parentNode = parentNode
+        self.reward = 0
         self.wins = 0
         self.visits = 0
-        self.virtual_loss = 0
         self.num_thread_visited = 0
-        self.reward = 0
+        self.path_ucb = []
+
+        self.virtual_loss = 0
+        self.childNodes = []
+        self.parentNode = parentNode
         self.check_childnode = []
         self.expanded_nodes = []
-        self.path_ucb = []
         self.childucb = []
+
+        # todo: move simulator outside of Tree_Node
+        self.property=property
         simulator.__init__(self, property)
+
     def selection(self):
         ucb = []
         for i in range(len(self.childNodes)):
@@ -85,10 +94,10 @@ class Tree_Node(simulator):
         added_nodes.extend(self.state)
         added_nodes.append(self.val[m])
         self.num_thread_visited += 1
-        n = Tree_Node(state=added_nodes, parentNode=self)
+        n = Tree_Node(state=added_nodes, parentNode=self, property=self.property)
         n.num_thread_visited += 1
         self.childNodes.append(n)
-        return  n
+        return n
 
     def update_local_node(self, score):
         self.visits += 1

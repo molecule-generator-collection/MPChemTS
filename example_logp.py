@@ -27,21 +27,15 @@ if __name__ == "__main__":
 #    chem_model = loaded_logp_model()
     chem_model = stateful_logp_model()
     property = "logP"
-    node = Tree_Node(state=['&'], property=property)
-
-    """
-    Initialize HashTable
-    """
-    random.seed(3)
-    hsm = HashTable(nprocs, node.val, node.max_len, len(node.val))
 
     """
     Design molecules using parallel MCTS: TDS-UCT,TDS-df-UCT and MP-MCTS
     """
     comm.barrier()
-    #score,mol=p_mcts.TDS_UCT(chem_model, hsm, property, comm)
-    #score,mol=p_mcts.TDS_df_UCT(chem_model, hsm, property, comm)
-    score, mol = p_mcts.MP_MCTS(chem_model, hsm, property, comm)
+    search = p_mcts(comm, chem_model, property)
+    #score,mol = search.TDS_UCT()
+    #score,mol = search.TDS_df_UCT()
+    score, mol = search.MP_MCTS()
 
     print("Done MCTS execution")
 
