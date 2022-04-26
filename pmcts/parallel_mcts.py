@@ -42,10 +42,6 @@ class p_mcts:
         self.nprocs = self.comm.Get_size()
 
         self.chem_model = chem_model
-        print("##########################################################################")
-        print(conf['reward_setting'])
-        print("rank: " + str(self.rank))
-        print("##########################################################################")
         self.reward_calculator = reward_calculator
         self.conf = conf
         # Initialize HashTable
@@ -133,8 +129,6 @@ class p_mcts:
                             self.hsm.insert(Item(node.state, node))
                             _, dest = self.hsm.hashing(n.state)
                             self.send_message(n, dest, tag=JobType.SEARCH.value)
-                            #comm.bsend(np.asarray([n.state, n.reward, n.wins, n.visits,
-                            #                       n.num_thread_visited]), dest=dest, tag=JobType.SEARCH.value)
                         else:
                             # or max_len_wavelength :
                             if len(node.state) < node.max_len:
