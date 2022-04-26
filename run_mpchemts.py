@@ -5,7 +5,6 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
 import sys
 import pickle
-import random
 import yaml
 
 import numpy as np
@@ -13,8 +12,6 @@ from rdkit import RDLogger
 
 from mpi4py import MPI
 from pmcts.load_model import loaded_model, get_model_structure_info
-from pmcts.zobrist_hash import HashTable
-from pmcts.search_tree import Tree_Node
 from pmcts.parallel_mcts import p_mcts
 
 
@@ -86,20 +83,16 @@ if __name__ == "__main__":
 
     print('load the pre-trained rnn model and define the property optimized')
     chem_model = loaded_model(conf)
-    node = Tree_Node(state=['&'], reward_calculator=reward_calculator, conf=conf)
-
-    print('Initialize HashTable')
-    random.seed(conf['random_seed'])
-    hsm = HashTable(nprocs, node.val, node.max_len, len(node.val))
 
     print('Run MPChemTS')
     comm.barrier()
+    search = p_mcts(comm, chem_model, reward_calculator, conf)
     if conf['search_type'] == 'TDS_UCT':
-        score, mol=p_mcts.TDS_UCT(chem_model, hsm, reward_calculator, comm, conf)
+        score, mol = search.TDS_UCT()
     elif conf['search_type'] == 'TDS_df_UCT':
-        score, mol=p_mcts.TDS_df_UCT(chem_model, hsm, reward_calculator, comm, conf)
+        score, mol = search.TDS_df_UCT()
     elif conf['search_type'] == 'MP_MCTS':
-        score, mol = p_mcts.MP_MCTS(chem_model, hsm, reward_calculator, comm, conf)
+        score, mol = search.MP_MCTS()
     else:
         print('[ERROR] Select a search type from [TDS_UCT, TDS_df_UCT, MP_MCTS]')
         sys.exit(1)
