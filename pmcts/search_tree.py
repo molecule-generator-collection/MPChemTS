@@ -3,6 +3,8 @@ import numpy as np
 from math import log, sqrt
 import random as pr
 
+#from mpi4py import MPI
+
 from pmcts.property_simulator import simulator
 from pmcts.rollout import chem_kn_simulation, predict_smile, make_input_smile
 
@@ -11,6 +13,8 @@ class Tree_Node(simulator):
     define the node in the tree
     """
     def __init__(self, state, parentNode=None, reward_calculator=None, conf=None):
+        # todo: these should be in a numpy array
+        # MPI payload [node.state, node.reward, node.wins, node.visits, node.num_thread_visited, node.path_ucb]
         self.state = state
         self.childNodes = []
         self.parentNode = parentNode
@@ -83,7 +87,7 @@ class Tree_Node(simulator):
         n = Tree_Node(state=added_nodes, parentNode=self, conf=self.conf)
         n.num_thread_visited += 1
         self.childNodes.append(n)
-        return  n
+        return n
 
     def update_local_node(self, score):
         self.visits += 1
@@ -91,7 +95,6 @@ class Tree_Node(simulator):
         self.reward = score
 
     def simulation(self, chem_model, state, rank, gauid):
-#        all_posible = chem_kn_simulation(chem_model, state, self.val, self.max_len)
         all_posible = chem_kn_simulation(chem_model, state, self.val, self.max_len)
         generate_smile = predict_smile(all_posible, self.val)
         new_compound = make_input_smile(generate_smile)
