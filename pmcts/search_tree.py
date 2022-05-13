@@ -1,3 +1,4 @@
+import itertools
 
 import numpy as np
 from math import log, sqrt
@@ -48,35 +49,22 @@ class Tree_Node(simulator):
         self.num_thread_visited += 1
         return ind, self.childNodes[ind]
 
-    def expansion(self, model):
+    def expansion(self, model, threshold=0.95):
         state = self.state
-        all_nodes = []
-        position = []
-        position.extend(state)
-        get_int_old = []
-        for j in range(len(position)):
-            get_int_old.append(self.val.index(position[j]))
-        get_int = get_int_old
+        get_int = [self.val.index(state[j]) for j in range(len(state))]
         x = np.reshape(get_int, (1, len(get_int)))
-        x_pad = x
-#        x_pad = sequence.pad_sequences(x, maxlen=self.max_len, dtype='int32',
-#                                       padding='post', truncating='pre', value=0.)
         model.reset_states()
-        predictions = model.predict(x_pad)
-        preds = np.asarray(predictions[0]).astype('float64')
-    #    preds = np.asarray(predictions[0][len(get_int) - 1]).astype('float64')
-        preds = np.log(preds) / 1.0
-        preds = np.exp(preds) / np.sum(np.exp(preds))
-        sort_index = np.argsort(-preds)
-        i = 0
-        sum_preds = preds[sort_index[i]]
-        all_nodes.append(sort_index[i])
-        while sum_preds <= 0.95:
-            i += 1
-            all_nodes.append(sort_index[i])
-            sum_preds += preds[sort_index[i]]
-        self.check_childnode.extend(all_nodes)
-        self.expanded_nodes.extend(all_nodes)
+        preds = model.predict(x)
+        state_preds = np.squeeze(preds)
+        sorted_idxs = np.argsort(state_preds)[::-1]
+        sorted_preds = state_preds[sorted_idxs]
+        for i, v in enumerate(itertools.accumulate(sorted_preds)):
+            if v > threshold:
+                i = i if i != 0 else 1  # return one index if the first prediction value exceeds the threshold.
+                break 
+        node_idxs = sorted_idxs[:i]
+        self.check_childnode.extend(node_idxs)
+        self.expanded_nodes.extend(node_idxs)
 
     def addnode(self, m):
         self.expanded_nodes.remove(m)
