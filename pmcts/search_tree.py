@@ -6,7 +6,7 @@ import random as pr
 #from mpi4py import MPI
 
 from pmcts.property_simulator import simulator
-from pmcts.rollout import chem_kn_simulation, build_smiles_from_tokens
+from pmcts.utils import chem_kn_simulation, build_smiles_from_tokens
 
 class Tree_Node(simulator):
     """
@@ -95,7 +95,7 @@ class Tree_Node(simulator):
         self.reward = score
 
     def simulation(self, chem_model, state, rank, gauid):
-        all_posible = chem_kn_simulation(chem_model, state, self.val, self.max_len)
+        all_posible = chem_kn_simulation(chem_model, state, self.val, self.conf)
         new_compound = build_smiles_from_tokens(all_posible, self.val)
         score, mol= self.run_simulator(new_compound, self.conf)
         return score, mol
