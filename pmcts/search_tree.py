@@ -2,13 +2,11 @@ import numpy as np
 from math import log, sqrt
 import random as pr
 
-from pmcts.property_simulator import simulator
+from rdkit import Chem
+
 from pmcts.utils import chem_kn_simulation, build_smiles_from_tokens, expanded_node
 
-class Tree_Node(simulator):
-    """
-    define the node in the tree
-    """
+class Tree_Node():
     def __init__(self, state, parentNode=None, reward_calculator=None, conf=None):
         # todo: these should be in a numpy array
         # MPI payload [node.state, node.reward, node.wins, node.visits, node.num_thread_visited, node.path_ucb]
@@ -25,7 +23,10 @@ class Tree_Node(simulator):
         self.path_ucb = []
         self.childucb = []
         self.conf = conf
-        simulator.__init__(self, reward_calculator, self.conf)
+        self.reward_calculator = reward_calculator
+        self.val = conf['token']
+        self.max_len=conf['max_len']
+
     def selection(self):
         ucb = []
         for i in range(len(self.childNodes)):
@@ -68,9 +69,14 @@ class Tree_Node(simulator):
 
     def simulation(self, chem_model, state, rank, gauid):
         all_posible = chem_kn_simulation(chem_model, state, self.val, self.conf)
-        new_compound = build_smiles_from_tokens(all_posible, self.val)
-        score, mol= self.run_simulator(new_compound, self.conf)
-        return score, mol
+        smi = build_smiles_from_tokens(all_posible, self.val)
+        mol = Chem.MolFromSmiles(smi)
+        if mol is None:
+            score = -1000 / (1 + 1000)
+        else:
+            values_list = [f(mol) for f in self.reward_calculator.get_objective_functions(self.conf)]
+            score = self.reward_calculator.calc_reward_from_objective_values(values=values_list, conf=self.conf)
+        return score, smi
 
     def backpropagation(self, cnode):
         self.wins += cnode.reward
