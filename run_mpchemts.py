@@ -11,7 +11,7 @@ import numpy as np
 from rdkit import RDLogger
 
 from mpi4py import MPI
-from pmcts.load_model import loaded_model, get_model_structure_info
+from pmcts.utils import loaded_model, get_model_structure_info
 from pmcts.parallel_mcts import p_mcts
 
 
