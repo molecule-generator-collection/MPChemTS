@@ -74,14 +74,13 @@ def get_model_structure_info(model_json):
 
 
 def loaded_model(conf):
-    vocab_size=conf['rnn_vocab_size']
-    embed_size=conf['rnn_output_size']
-
     model = Sequential()
-
-    model.add(Embedding(input_dim=vocab_size, output_dim=vocab_size, batch_size=1, mask_zero=False))
-    model.add(GRU(256, batch_input_shape=(1, None, 64), activation='tanh', return_sequences=True, stateful=True))
+    model.add(Embedding(input_dim=conf['rnn_vocab_size'], output_dim=conf['rnn_vocab_size'],
+                        batch_size=1, mask_zero=False))
+    model.add(GRU(256, batch_input_shape=(1, None, conf['rnn_vocab_size']), activation='tanh',
+                  return_sequences=True, stateful=True))
     model.add(GRU(256, activation='tanh', return_sequences=False, stateful=True))
-    model.add(Dense(embed_size, activation='softmax'))
+    model.add(Dense(conf['rnn_output_size'], activation='softmax'))
     model.load_weights(conf['model_weight'])
+
     return model
