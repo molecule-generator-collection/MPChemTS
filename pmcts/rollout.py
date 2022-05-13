@@ -21,24 +21,12 @@ def chem_kn_simulation(model, state, val, smiles_max_len):  # MEMO: this functio
     return all_posible
 
 
-def predict_smile(all_posible, val):
+def build_smiles_from_tokens(all_posible, val):
     new_compound = []
     for i in range(len(all_posible)):
         total_generated = all_posible[i]
-        generate_smile = []
-        for j in range(len(total_generated) - 1):
-            generate_smile.append(val[total_generated[j]])
-        generate_smile.remove("&")
-        new_compound.append(generate_smile)
-    return new_compound
-
-
-def make_input_smile(generate_smile):
-    new_compound = []
-    for i in range(len(generate_smile)):
-        middle = []
-        for j in range(len(generate_smile[i])):
-            middle.append(generate_smile[i][j])
-        com = ''.join(middle)
-        new_compound.append(com)
+        generate_tokens = [val[total_generated[j]] for j in range(len(total_generated) - 1)]
+        generate_tokens.remove("&")
+        generate_smiles = ''.join(generate_tokens)
+        new_compound.append(generate_smiles)
     return new_compound
