@@ -6,6 +6,7 @@ from keras.layers import Dense
 from keras.layers import GRU
 from keras.layers.embeddings import Embedding
 import numpy as np
+from rdkit import Chem
 
 
 def expanded_node(model, state, val, threshold=0.95):  # Can be merged with ChemTSv2
@@ -84,3 +85,11 @@ def loaded_model(conf):
     model.load_weights(conf['model_weight'])
 
     return model
+
+
+def has_passed_through_filters(smiles, conf):
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:  # default check
+        return False
+    checks = [f.check(mol, conf) for f in conf['filter_list']]
+    return all(checks)

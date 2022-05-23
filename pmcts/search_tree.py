@@ -4,7 +4,7 @@ import random as pr
 
 from rdkit import Chem
 
-from pmcts.utils import chem_kn_simulation, build_smiles_from_tokens, expanded_node
+from pmcts.utils import chem_kn_simulation, build_smiles_from_tokens, expanded_node, has_passed_through_filters
 
 class Tree_Node():
     def __init__(self, state, parentNode=None, reward_calculator=None, conf=None):
@@ -70,12 +70,12 @@ class Tree_Node():
     def simulation(self, chem_model, state, rank, gauid):
         all_posible = chem_kn_simulation(chem_model, state, self.val, self.conf)
         smi = build_smiles_from_tokens(all_posible, self.val)
-        mol = Chem.MolFromSmiles(smi)
-        if mol is None:
-            score = -1000 / (1 + 1000)
-        else:
+        if has_passed_through_filters(smi, self.conf):
+            mol = Chem.MolFromSmiles(smi)
             values_list = [f(mol) for f in self.reward_calculator.get_objective_functions(self.conf)]
             score = self.reward_calculator.calc_reward_from_objective_values(values=values_list, conf=self.conf)
+        else:
+            score = -1000 / (1 + 1000)
         return score, smi
 
     def backpropagation(self, cnode):
