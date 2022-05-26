@@ -1,17 +1,12 @@
-
 import numpy as np
 from math import log, sqrt
 import random as pr
 
-#from mpi4py import MPI
+from rdkit import Chem
 
-from pmcts.property_simulator import simulator
-from pmcts.rollout import chem_kn_simulation, predict_smile, make_input_smile
+from pmcts.utils import chem_kn_simulation, build_smiles_from_tokens, expanded_node, has_passed_through_filters
 
-class Tree_Node(simulator):
-    """
-    define the node in the tree
-    """
+class Tree_Node():
     def __init__(self, state, parentNode=None, reward_calculator=None, conf=None):
         # todo: these should be in a numpy array
         # MPI payload [node.state, node.reward, node.wins, node.visits, node.num_thread_visited, node.path_ucb]
@@ -28,7 +23,10 @@ class Tree_Node(simulator):
         self.path_ucb = []
         self.childucb = []
         self.conf = conf
-        simulator.__init__(self, reward_calculator, self.conf)
+        self.reward_calculator = reward_calculator
+        self.val = conf['token']
+        self.max_len=conf['max_len']
+
     def selection(self):
         ucb = []
         for i in range(len(self.childNodes)):
@@ -49,34 +47,9 @@ class Tree_Node(simulator):
         return ind, self.childNodes[ind]
 
     def expansion(self, model):
-        state = self.state
-        all_nodes = []
-        position = []
-        position.extend(state)
-        get_int_old = []
-        for j in range(len(position)):
-            get_int_old.append(self.val.index(position[j]))
-        get_int = get_int_old
-        x = np.reshape(get_int, (1, len(get_int)))
-        x_pad = x
-#        x_pad = sequence.pad_sequences(x, maxlen=self.max_len, dtype='int32',
-#                                       padding='post', truncating='pre', value=0.)
-        model.reset_states()
-        predictions = model.predict(x_pad)
-        preds = np.asarray(predictions[0]).astype('float64')
-    #    preds = np.asarray(predictions[0][len(get_int) - 1]).astype('float64')
-        preds = np.log(preds) / 1.0
-        preds = np.exp(preds) / np.sum(np.exp(preds))
-        sort_index = np.argsort(-preds)
-        i = 0
-        sum_preds = preds[sort_index[i]]
-        all_nodes.append(sort_index[i])
-        while sum_preds <= 0.95:
-            i += 1
-            all_nodes.append(sort_index[i])
-            sum_preds += preds[sort_index[i]]
-        self.check_childnode.extend(all_nodes)
-        self.expanded_nodes.extend(all_nodes)
+        node_idxs = expanded_node(model, self.state, self.val)
+        self.check_childnode.extend(node_idxs)
+        self.expanded_nodes.extend(node_idxs)
 
     def addnode(self, m):
         self.expanded_nodes.remove(m)
@@ -95,11 +68,15 @@ class Tree_Node(simulator):
         self.reward = score
 
     def simulation(self, chem_model, state, rank, gauid):
-        all_posible = chem_kn_simulation(chem_model, state, self.val, self.max_len)
-        generate_smile = predict_smile(all_posible, self.val)
-        new_compound = make_input_smile(generate_smile)
-        score, mol= self.run_simulator(new_compound, self.conf)
-        return score, mol
+        all_posible = chem_kn_simulation(chem_model, state, self.val, self.conf)
+        smi = build_smiles_from_tokens(all_posible, self.val)
+        if has_passed_through_filters(smi, self.conf):
+            mol = Chem.MolFromSmiles(smi)
+            values_list = [f(mol) for f in self.reward_calculator.get_objective_functions(self.conf)]
+            score = self.reward_calculator.calc_reward_from_objective_values(values=values_list, conf=self.conf)
+        else:
+            score = -1000 / (1 + 1000)
+        return score, smi
 
     def backpropagation(self, cnode):
         self.wins += cnode.reward

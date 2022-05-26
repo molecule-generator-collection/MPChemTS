@@ -3,6 +3,7 @@ import csv
 from importlib import import_module
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
+import re
 import sys
 import pickle
 import yaml
@@ -11,7 +12,7 @@ import numpy as np
 from rdkit import RDLogger
 
 from mpi4py import MPI
-from pmcts.load_model import loaded_model, get_model_structure_info
+from pmcts.utils import loaded_model, get_model_structure_info
 from pmcts.parallel_mcts import p_mcts
 
 
@@ -48,6 +49,41 @@ def set_default_config(conf):
 
     conf.setdefault('search_type', 'MP_MCTS')
 
+    conf.setdefault('use_lipinski_filter', True)
+    conf.setdefault('lipinski_filter', {
+        'module': 'filter.lipinski_filter',
+        'class': 'LipinskiFilter',
+        'type': 'rule_of_5'})
+    conf.setdefault('use_radical_filter', True)
+    conf.setdefault('radical_filter', {
+        'module': 'filter.radical_filter',
+        'class': 'RadicalFilter'})
+    conf.setdefault('use_hashimoto_filter', True) 
+    conf.setdefault('hashimoto_filter', {
+        'module': 'filter.hashimoto_filter',
+        'class': 'HashimotoFilter'}) 
+    conf.setdefault('use_sascore_filter', True)
+    conf.setdefault('sascore_filter', {
+        'module': 'filter.sascore_filter',
+        'class': 'SascoreFilter',
+        'threshold': 3.5})
+    conf.setdefault('use_ring_size_filter', True)
+    conf.setdefault('ring_size_filter', {
+        'module': 'filter.ring_size_filter',
+        'class': 'RingSizeFilter',
+        'threshold': 6})
+
+    
+def get_filter_modules(conf):
+    pat = re.compile(r'^use.*filter$')
+    module_list = []
+    for k, frag in conf.items():
+        if not pat.search(k) or frag != True:
+            continue
+        _k = k.replace('use_', '')
+        module_list.append(getattr(import_module(conf[_k]['module']), conf[_k]['class']))
+    return module_list
+
 
 if __name__ == "__main__":
     args = get_parser()
@@ -72,6 +108,8 @@ if __name__ == "__main__":
         print(f"{k}: {v}")
     print(f"GPU devices: {os.environ['CUDA_VISIBLE_DEVICES']}")
     print(f"===================================")
+
+    conf['filter_list'] = get_filter_modules(conf)
 
     print("Initialize MPI environment")
     comm = MPI.COMM_WORLD
