@@ -68,15 +68,24 @@ class Tree_Node():
         self.reward = score
 
     def simulation(self, chem_model, state, rank, gauid):
+        filter_flag = 0
+
         all_posible = chem_kn_simulation(chem_model, state, self.val, self.conf)
         smi = build_smiles_from_tokens(all_posible, self.val)
         if has_passed_through_filters(smi, self.conf):
             mol = Chem.MolFromSmiles(smi)
             values_list = [f(mol) for f in self.reward_calculator.get_objective_functions(self.conf)]
             score = self.reward_calculator.calc_reward_from_objective_values(values=values_list, conf=self.conf)
+            filter_flag = 1
         else:
+            mol = Chem.MolFromSmiles(smi)
+            if mol is None:
+                values_list = [0 for f in self.reward_calculator.get_objective_functions(self.conf)]
+            else:
+                values_list = [f(mol) for f in self.reward_calculator.get_objective_functions(self.conf)]
             score = -1000 / (1 + 1000)
-        return score, smi
+            filter_flag = 0
+        return values_list, score, smi, filter_flag
 
     def backpropagation(self, cnode):
         self.wins += cnode.reward

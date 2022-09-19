@@ -1,4 +1,6 @@
 #from math import *
+from asyncore import file_wrapper
+from curses import raw
 import time
 import random
 import numpy as np
@@ -9,6 +11,8 @@ from pmcts.check_ucbpath import backtrack_tdsdfuct, backtrack_mpmcts, compare_uc
 from pmcts.search_tree import Tree_Node
 from pmcts.zobrist_hash import Item, HashTable
 from enum import Enum
+import pandas as pd
+import os
 
 """
 classes defined distributed parallel mcts
@@ -24,6 +28,7 @@ class JobType(Enum):
     SEARCH = 0
     BACKPROPAGATION = 1
     PRIORITY_BORDER = 128
+    GATHER_RESULTS = 253
     TIMEUP = 254
     FINISH = 255
 
@@ -36,6 +41,8 @@ class p_mcts:
     """
     parallel mcts algorithms includes TDS-UCT, TDS-df-UCT and MP-MCTS
     """
+    # todo: use generated_dict
+
     def __init__(self, communicator, chem_model, reward_calculator, conf):
         self.comm = communicator
         self.rank = self.comm.Get_rank()
@@ -48,6 +55,39 @@ class p_mcts:
         root_node = Tree_Node(state=['&'], reward_calculator=reward_calculator, conf=conf)
         random.seed(3)
         self.hsm = HashTable(self.nprocs, root_node.val, root_node.max_len, len(root_node.val))
+
+        if self.rank == 0:
+            self.output_path = os.path.join(conf['output_dir'], f"result_C{conf['c_val']}.csv")
+            if os.path.exists(self.output_path) and not conf['restart']:
+                sys.exit(f"[ERROR] {self.output_path} already exists. Please specify a different file name.")
+                assert(False)
+
+        self.start_time = time.time()
+
+        self.id_suffix = "_" + str(self.rank).zfill(len(str(self.nprocs)))
+
+        # for results
+        self.total_valid_num = 0
+
+        # these are gathred to rank 0 in the end
+        self.generated_id_list = []
+        self.valid_smiles_list = []
+        self.depth_list = []
+        self.objective_values_list = [] # raw reward (could be list)
+        self.reward_values_list = [] # normalized reward for UCT
+        self.elapsed_time_list = []
+
+        self.generated_dict = {}  # dictionary of generated compounds
+        self.filter_check_list = [] # only needed for output (at rank 0)
+        self.obj_column_names = [f.__name__ for f in self.reward_calculator.get_objective_functions(self.conf)]
+
+    def get_generated_id(self):
+        id = str(self.total_valid_num) + self.id_suffix
+        self.total_valid_num += 1
+        return id
+
+    def elapsed_time(self):
+        return time.time() - self.start_time
 
     def send_message(self, node, dest, tag, data=None):
         # send node using MPI_Bsend
@@ -71,14 +111,64 @@ class p_mcts:
             [node.state, node.reward, node.wins, node.visits, node.num_thread_visited, node.path_ucb]),
             dest=dest, tag=JobType.BACKPROPAGATION.value)
 
+    def record_result(self, smiles, depth, reward, raw_reward_list, filter_flag):
+        self.valid_smiles_list.append(smiles)
+        self.depth_list.append(depth)
+        self.reward_values_list.append(reward)
+        self.elapsed_time_list.append(self.elapsed_time())
+        self.generated_id_list.append(self.get_generated_id())
+        self.objective_values_list.append(raw_reward_list)
+        self.filter_check_list.append(filter_flag)
+
+    def gather_results(self):
+        status = MPI.Status()
+        for id in range(1, self.nprocs):
+            if self.rank == 0:
+                (valid_smiles_list, depth_list, reward_values_list, elapsed_time_list,
+                 generated_id_list, objective_values_list, filter_check_list) = self.comm.recv(source=id, tag=JobType.GATHER_RESULTS.value, status=status)
+                self.valid_smiles_list.extend(valid_smiles_list)
+                self.depth_list.extend(depth_list)
+                self.reward_values_list.extend(reward_values_list)
+                self.elapsed_time_list.extend(elapsed_time_list)
+                self.generated_id_list.extend(generated_id_list)
+                self.objective_values_list.extend(objective_values_list)
+                self.filter_check_list.extend(filter_check_list)
+            else:
+                self.comm.send((self.valid_smiles_list, self.depth_list, self.reward_values_list, self.elapsed_time_list,
+                                self.generated_id_list, self.objective_values_list, self.filter_check_list),
+                                dest=0, tag=JobType.GATHER_RESULTS.value)
+
+    def flush(self):
+        df = pd.DataFrame({
+            "generated_id": self.generated_id_list,
+            "smiles": self.valid_smiles_list,
+            "reward": self.reward_values_list,
+            "depth": self.depth_list,
+            "elapsed_time": self.elapsed_time_list,
+            "is_through_filter": self.filter_check_list,
+        })
+        df_obj = pd.DataFrame(self.objective_values_list, columns=self.obj_column_names)
+        df = pd.concat([df, df_obj], axis=1)
+        if os.path.exists(self.output_path):
+            df.to_csv(self.output_path, mode='a', index=False, header=False)
+        else:
+            df.to_csv(self.output_path, mode='w', index=False)
+        # self.logger.info(f"save results at {self.output_path}")
+
+        self.generated_id_list.clear()
+        self.valid_smiles_list.clear()
+        self.reward_values_list.clear()
+        self.depth_list.clear()
+        self.elapsed_time_list.clear()
+        self.filter_check_list.clear()
+        self.objective_values_list.clear()
+
     def TDS_UCT(self):
         # self.comm.barrier()
         status = MPI.Status()
-
         gau_id = 0  # this is used for wavelength
-        allscore = []
-        allmol = []
-        start_time = time.time()
+
+        self.start_time = time.time()
         _, rootdest = self.hsm.hashing(['&'])
         jobq = deque()
         timeup = False
@@ -90,15 +180,15 @@ class p_mcts:
                 jobq.appendleft(root_job)
         while not timeup:
             if self.rank == 0:
-                if time.time()-start_time > 600:
+                if self.elapsed_time() > 600:
                     timeup = True
                     for dest in range(1, self.nprocs):
                         dummy_data = tag = JobType.TIMEUP.value
                         self.comm.bsend(dummy_data, dest=dest,
-                                   tag=JobType.TIMEUP.value)
+                                        tag=JobType.TIMEUP.value)
             while True:
                 ret = self.comm.Iprobe(source=MPI.ANY_SOURCE,
-                                  tag=MPI.ANY_TAG, status=status)
+                                        tag=MPI.ANY_TAG, status=status)
                 if ret == False:
                     break
                 else:
@@ -132,11 +222,12 @@ class p_mcts:
                         else:
                             # or max_len_wavelength :
                             if len(node.state) < node.max_len:
-                                score, mol = node.simulation(
+                                values_list, score, mol, filter_flag = node.simulation(
                                     self.chem_model, node.state, self.rank, gau_id)
                                 gau_id += 1
-                                allscore.append(score)
-                                allmol.append(mol)
+
+                                self.record_result(smiles=mol, depth=len(node.state), reward=score,
+                                                   raw_reward_list=values_list, filter_flag=filter_flag)
                                 # backpropagation on local memory
                                 node.update_local_node(score)
                                 self.hsm.insert(Item(node.state, node))
@@ -161,7 +252,7 @@ class p_mcts:
                                 self.hsm.insert(Item(node.state, node))
                                 _, dest = self.hsm.hashing(n.state)
                                 self.comm.bsend(np.asarray([n.state, n.reward, n.wins, n.visits,
-                                                       n.num_thread_visited]), dest=dest, tag=JobType.SEARCH.value)
+                                                n.num_thread_visited]), dest=dest, tag=JobType.SEARCH.value)
                             else:
                                 ind, childnode = node.selection()
                                 self.hsm.insert(Item(node.state, node))
@@ -194,13 +285,12 @@ class p_mcts:
                                             self.send_message(childnode, dest, tag=JobType.SEARCH.value)
 
                                 else:
-                                    score, mol = node.simulation(
+                                    values_list, score, mol, filter_flag = node.simulation(
                                         self.chem_model, node.state, self.rank, gau_id)
-
                                     gau_id += 1
                                     score = -1
-                                    allscore.append(score)
-                                    allmol.append(mol)
+                                    self.record_result(smiles=mol, depth=len(node.state), reward=score,
+                                                       raw_reward_list=[score], filter_flag=filter_flag)
                                     # backpropagation on local memory
                                     node.update_local_node(score)
                                     self.hsm.insert(Item(node.state, node))
@@ -232,16 +322,13 @@ class p_mcts:
                 elif tag == JobType.TIMEUP.value:
                     timeup = True
 
-        return allscore, allmol
+        return
 
     def TDS_df_UCT(self):
         # self.comm.barrier()
         status = MPI.Status()
         gau_id = 0  # this is used for wavelength
-        start_time = time.time()
-        allscore = []
-        allmol = []
-        depth = []
+        self.start_time = time.time()
         bpm = 0
         bp = []
         _, rootdest = self.hsm.hashing(['&'])
@@ -255,15 +342,15 @@ class p_mcts:
                 jobq.appendleft(root_job)
         while not timeup:
             if self.rank == 0:
-                if time.time()-start_time > 600:
+                if self.elapsed_time() > 600:
                     timeup = True
                     for dest in range(1, self.nprocs):
                         dummy_data = tag = JobType.TIMEUP.value
                         self.comm.bsend(dummy_data, dest=dest,
-                                   tag=JobType.TIMEUP.value)
+                                        tag=JobType.TIMEUP.value)
             while True:
                 ret = self.comm.Iprobe(source=MPI.ANY_SOURCE,
-                                  tag=MPI.ANY_TAG, status=status)
+                                        tag=MPI.ANY_TAG, status=status)
                 if ret == False:
                     break
                 else:
@@ -293,13 +380,12 @@ class p_mcts:
                             self.send_message(n, dest, tag=JobType.SEARCH.value)
                         else:
                             if len(node.state) < node.max_len:
-                                score, mol = node.simulation(
+                                values_list, score, mol, filter_flag = node.simulation(
                                     self.chem_model, node.state, self.rank, gau_id)
                                 #print (mol)
                                 gau_id += 1
-                                allscore.append(score)
-                                allmol.append(mol)
-                                depth.append(len(node.state))
+                                self.record_result(smiles=mol, depth=len(node.state), reward=score,
+                                                   raw_reward_list=values_list, filter_flag=filter_flag)
                                 node.update_local_node(score)
                                 # update infor table
                                 info_table = backtrack_tdsdfuct(
@@ -366,13 +452,12 @@ class p_mcts:
                                                 childnode.state)
                                             self.send_message(childnode, dest, tag=JobType.SEARCH.value)
                                 else:
-                                    score, mol = node.simulation(
+                                    value_list, score, mol, filter_flag = node.simulation(
                                         self.chem_model, node.state, self.rank, gau_id)
                                     gau_id += 1
                                     score = -1
-                                    allscore.append(score)
-                                    allmol.append(mol)
-                                    depth.append(len(node.state))
+                                    self.record_result(smiles=mol, depth=len(node.state), reward=score,
+                                                       raw_reward_list=value_list, filter_flag=filter_flag)
                                     node.update_local_node(score)
                                     info_table = backtrack_tdsdfuct(
                                         info_table, score)
@@ -418,15 +503,13 @@ class p_mcts:
                     timeup = True
         bp.append(bpm)
 
-        return allscore, allmol
+        return
 
     def MP_MCTS(self):
         #self.comm.barrier()
         status = MPI.Status()
         gau_id = 0 ## this is used for wavelength
-        start_time = time.time()
-        allscore = []
-        allmol = []
+        self.start_time = time.time()
         _, rootdest = self.hsm.hashing(['&'])
         jobq = deque()
         timeup = False
@@ -438,11 +521,12 @@ class p_mcts:
                 jobq.appendleft(root_job)
         while not timeup:
             if self.rank == 0:
-                if time.time()-start_time > 60:
+                if self.elapsed_time() > 60: # default 60s
                     timeup = True
                     for dest in range(1, self.nprocs):
                         dummy_data = tag = JobType.TIMEUP.value
                         self.comm.bsend(dummy_data, dest=dest, tag=JobType.TIMEUP.value)
+
             while True:
                 ret = self.comm.Iprobe(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
                 if ret == False:
@@ -471,10 +555,10 @@ class p_mcts:
                             self.send_message(n, dest, tag=JobType.SEARCH.value)
                         else:
                             if len(node.state) < node.max_len:
-                                score, mol = node.simulation(self.chem_model, node.state, self.rank, gau_id)
+                                values_list, score, mol, filter_flag = node.simulation(self.chem_model, node.state, self.rank, gau_id)
                                 gau_id+=1
-                                allscore.append(score)
-                                allmol.append(mol)
+                                self.record_result(smiles=mol, depth=len(node.state), reward=score,
+                                                   raw_reward_list=values_list, filter_flag=filter_flag)
                                 node.update_local_node(score)
                                 self.hsm.insert(Item(node.state, node))
                                 _, dest = self.hsm.hashing(node.state[0:-1])
@@ -528,11 +612,11 @@ class p_mcts:
                                             _, dest = self.hsm.hashing(childnode.state)
                                             self.send_message(childnode, dest, tag=JobType.SEARCH.value, data=ucb_table)
                                 else:
-                                    score, mol = node.simulation(self.chem_model, node.state, self.rank, gau_id)
+                                    values_list, score, mol, filter_flag = node.simulation(self.chem_model, node.state, self.rank, gau_id)
                                     gau_id+=1
                                     score = -1
-                                    allscore.append(score)
-                                    allmol.append(mol)
+                                    self.record_result(smiles=mol, depth=len(node.state), reward=score,
+                                                       raw_reward_list=values_list, filter_flag=filter_flag)
                                     node.update_local_node(score)
                                     self.hsm.insert(Item(node.state, node))
                                     _, dest = self.hsm.hashing(node.state[0:-1])
@@ -564,7 +648,8 @@ class p_mcts:
                         if back_flag == 0:
                             _, dest = self.hsm.hashing(local_node.state)
                             self.send_message(local_node, dest, tag=JobType.SEARCH.value)
+
                 elif tag == JobType.TIMEUP.value:
                     timeup = True
 
-        return allscore, allmol
+        return

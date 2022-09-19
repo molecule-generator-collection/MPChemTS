@@ -33,3 +33,5 @@ ring_size_filter:
   module: filter.ring_size_filter
   class: RingSizeFilter
   threshold: 6
+
+c_val: 1.0
