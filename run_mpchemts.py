@@ -37,7 +37,7 @@ def get_parser():
     
 
 def set_default_config(conf):
-    conf.setdefault('output_dir', 'result')
+    conf.setdefault('output_dir', 'result/example01')
     conf.setdefault('random_seed', 3)
     conf.setdefault('token', 'model/tokens.pkl')
 
@@ -89,6 +89,7 @@ if __name__ == "__main__":
     args = get_parser()
     with open(args.config, 'r') as f:
         conf = yaml.load(f, Loader=yaml.SafeLoader)
+    os.makedirs(conf['output_dir'], exist_ok=True)
     
     conf['debug'] = args.debug
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1' if args.gpu is None else args.gpu
