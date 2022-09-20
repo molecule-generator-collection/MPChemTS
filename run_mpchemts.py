@@ -37,6 +37,7 @@ def get_parser():
     
 
 def set_default_config(conf):
+    conf.setdefault('c_val', 1.0)
     conf.setdefault('output_dir', 'result/example01')
     conf.setdefault('random_seed', 3)
     conf.setdefault('token', 'model/tokens.pkl')
@@ -89,6 +90,7 @@ if __name__ == "__main__":
     args = get_parser()
     with open(args.config, 'r') as f:
         conf = yaml.load(f, Loader=yaml.SafeLoader)
+    set_default_config(conf)
     os.makedirs(conf['output_dir'], exist_ok=True)
     
     conf['debug'] = args.debug
