@@ -119,52 +119,35 @@ if __name__ == "__main__":
     mem = np.zeros(1024 * 10 * 1024)
     MPI.Attach_buffer(mem)
 
-    print('load the pre-trained rnn model and define the property optimized')
+    print('load the psre-trained rnn model and define the property optimized')
     chem_model = loaded_model(conf)
 
     print('Run MPChemTS')
     comm.barrier()
     search = p_mcts(comm, chem_model, reward_calculator, conf)
     if conf['search_type'] == 'TDS_UCT':
-        score, mol = search.TDS_UCT()
+        search.TDS_UCT()
     elif conf['search_type'] == 'TDS_df_UCT':
-        score, mol = search.TDS_df_UCT()
+        search.TDS_df_UCT()
     elif conf['search_type'] == 'MP_MCTS':
-        score, mol = search.MP_MCTS()
+        search.MP_MCTS()
     else:
         print('[ERROR] Select a search type from [TDS_UCT, TDS_df_UCT, MP_MCTS]')
         sys.exit(1)
 
     print("Done MCTS execution")
 
-    result = list(map(lambda x, y:(x,y), score, mol))
-    result = sorted(result, key = lambda x: x[0], reverse=True)
-    result = result[:3]
     comm.barrier()
 
+    search.gather_results()
     if rank==0:
-      for src in range(1, nprocs):
-        data = comm.recv(source=src, tag=999, status=status)
-        result.extend(data)
-      result = sorted(result, key = lambda x: x[0], reverse=True)
-      result = result[:3]
-      max_reward = result[0][0]
-      plogp_score = max_reward/(1.0 - max_reward)
-      print("\nTop 3 molecules\nreward\tplogp score\tmolecule SMILES")
-      for itr in result:
-        reward = itr[0]
-        plogp_score = reward/(1.0 - reward) 
-        print(str(round(reward, 4))+'\t'+str(round(plogp_score, 4))+'\t\t'+str(itr[1]))
-#      print("max reward: %.4f, max plogp score: %.4f\n" %(max_reward, plogp_score))
-    else:
-      comm.send(result, dest = 0, tag=999)
+        search.flush()
 
-
-    output_score_path = os.path.join(conf['output_dir'], f"logp_score{rank}.csv")
-    with open(output_score_path, 'w', newline='') as f:
-        writer = csv.writer(f, delimiter='\n')
-        writer.writerow(score)
-    output_mol_path = os.path.join(conf['output_dir'], f"logp_mol{rank}.csv")
-    with open(output_mol_path, 'w', newline='') as f:
-        writer = csv.writer(f, delimiter='\n')
-        writer.writerow(mol)
+#    output_score_path = os.path.join(conf['output_dir'], f"logp_score{rank}.csv")
+#    with open(output_score_path, 'w', newline='') as f:
+#        writer = csv.writer(f, delimiter='\n')
+#        writer.writerow(score)
+#    output_mol_path = os.path.join(conf['output_dir'], f"logp_mol{rank}.csv")
+#    with open(output_mol_path, 'w', newline='') as f:
+#        writer = csv.writer(f, delimiter='\n')
+#        writer.writerow(mol)
