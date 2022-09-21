@@ -13,6 +13,7 @@ from pmcts.zobrist_hash import Item, HashTable
 from enum import Enum
 import pandas as pd
 import os
+import sys
 
 """
 classes defined distributed parallel mcts
@@ -58,7 +59,7 @@ class p_mcts:
 
         if self.rank == 0:
             self.output_path = os.path.join(conf['output_dir'], f"result_C{conf['c_val']}.csv")
-            if os.path.exists(self.output_path) and not conf['restart']:
+            if os.path.exists(self.output_path):
                 sys.exit(f"[ERROR] {self.output_path} already exists. Please specify a different file name.")
                 assert(False)
 
