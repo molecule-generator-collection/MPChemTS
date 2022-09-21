@@ -34,7 +34,7 @@ class Tree_Node():
                         self.childNodes[i].virtual_loss) /
                        (self.childNodes[i].visits +
                         self.childNodes[i].num_thread_visited) +
-                       1.0 *
+                       self.conf['c_val'] *
                        sqrt(2 *log(self.visits +self.num_thread_visited) /
                             (self.childNodes[i].visits +
                                 self.childNodes[i].num_thread_visited)))
