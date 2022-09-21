@@ -134,7 +134,7 @@ class p_mcts:
                 self.generated_id_list.extend(generated_id_list)
                 self.objective_values_list.extend(objective_values_list)
                 self.filter_check_list.extend(filter_check_list)
-            else:
+            elif self.rank == id:
                 self.comm.send((self.valid_smiles_list, self.depth_list, self.reward_values_list, self.elapsed_time_list,
                                 self.generated_id_list, self.objective_values_list, self.filter_check_list),
                                 dest=0, tag=JobType.GATHER_RESULTS.value)
