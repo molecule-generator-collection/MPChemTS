@@ -7,27 +7,20 @@ Check the paper for details: [Practical Massively Parallel Monte-Carlo Tree Sear
 
 The code was tested on Linux and MacOS, we recommend using anaconda to install the following softwares.
 
-1. [Python](https://www.anaconda.com/products/individual)(version 3.7.4)
-2. [MPI](https://anaconda.org/conda-forge/openmpi)
-3. [mpi4py](https://anaconda.org/anaconda/mpi4py)(version 3.0.3)
-4. [RDkit](https://anaconda.org/rdkit/rdkit)
-5. [Tensorflow](https://www.tensorflow.org/install/pip)(verison 1.15.2)
-6. [Networkx](https://anaconda.org/anaconda/networkx)
+1. [Python](https://www.anaconda.com/products/individual)(version 3.7)
+2. [mpi4py](https://anaconda.org/anaconda/mpi4py)(version 3.0.3)
+3. [ChemTSv2](https://github.com/molecule-generator-collection/ChemTSv2)
 
 ### How to setup the environment
 
-```bash
-TODO: Need to use only pip or conda
+NOTE: You need to run MPChemTS on a server where OpenMPI or MPICH is installed. If you can't find `mpiexec` command, please consult your server administrator to install such an MPI library.
 
-conda create -n mpchemts python=3.7
-# switch a python virtual environment to `mpchemts`
-pip install --upgrade tensorflow==2.5
-pip install rdkit-pypi==2021.03.5
-pip install networkx
-pip install pyyaml
-conda install -c conda-forge openmpi
-conda install -c conda-forge mpi4py=3.0.3
-conda install -c conda-forge cxx-compiler mpi
+```bash
+cd YOUR_WORKSPACE
+python3.7 -m venv .venv
+source .venv/bin/activate
+pip install chemtsv2
+pip install mpi4py==3.0.3
 
 # If you use SAScore filter, please retrieve files for SAscore calculations
 wget -P data https://raw.githubusercontent.com/rdkit/rdkit/master/Contrib/SA_Score/{fpscores.pkl.gz,sascorer.py}
