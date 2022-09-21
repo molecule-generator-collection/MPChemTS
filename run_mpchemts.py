@@ -1,4 +1,5 @@
 import argparse
+from logging import getLogger, StreamHandler, FileHandler, Formatter, INFO, DEBUG
 from importlib import import_module
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
@@ -35,6 +36,25 @@ def get_parser():
     )
     return parser.parse_args()
     
+
+def get_logger(level, save_dir):
+    logger = getLogger(__name__)
+    logger.setLevel(level)
+    logger.propagate = False
+
+    formatter = Formatter("%(asctime)s : %(levelname)s : %(message)s ")
+
+    fh = FileHandler(filename=os.path.join(save_dir, "run.log"), mode='w')
+    fh.setLevel(level)
+    fh.setFormatter(formatter)
+    sh = StreamHandler()
+    sh.setLevel(level)
+    sh.setFormatter(formatter)
+
+    logger.addHandler(fh)
+    logger.addHandler(sh)
+    return logger
+
 
 def set_default_config(conf):
     conf.setdefault('c_val', 1.0)
@@ -87,14 +107,24 @@ def get_filter_modules(conf):
 
 
 if __name__ == "__main__":
+    # Initialize MPI environment
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    nprocs = comm.Get_size()
+    status = MPI.Status()
+    mem = np.zeros(1024 * 10 * 1024)
+    MPI.Attach_buffer(mem)
+    
     args = get_parser()
     with open(args.config, 'r') as f:
         conf = yaml.load(f, Loader=yaml.SafeLoader)
     set_default_config(conf)
     os.makedirs(conf['output_dir'], exist_ok=True)
+    os.environ['CUDA_VISIBLE_DEVICES'] = '-1' if args.gpu is None else args.gpu
     
     conf['debug'] = args.debug
-    os.environ['CUDA_VISIBLE_DEVICES'] = '-1' if args.gpu is None else args.gpu
+    log_level = DEBUG if args.debug else INFO
+    logger = get_logger(log_level, conf["output_dir"])
     if not conf['debug']:
         RDLogger.DisableLog("rdApp.*")
 
@@ -111,31 +141,23 @@ if __name__ == "__main__":
     with open(conf['token'], 'rb') as f:
         tokens = pickle.load(f)
     conf['token'] = tokens
-    conf['max_len'], conf['rnn_vocab_size'], conf['rnn_output_size'] = get_model_structure_info(conf['model_json'])
+    conf['max_len'], conf['rnn_vocab_size'], conf['rnn_output_size'] = get_model_structure_info(conf['model_json'], logger)
 
     rs = conf['reward_setting']
     reward_calculator = getattr(import_module(rs['reward_module']), rs['reward_class'])
 
-    print(f"========== Configuration ==========")
-    for k, v in conf.items():
-        print(f"{k}: {v}")
-    print(f"GPU devices: {os.environ['CUDA_VISIBLE_DEVICES']}")
-    print(f"===================================")
+    if rank == 0:
+        logger.info(f"========== Configuration ==========")
+        for k, v in conf.items():
+            logger.info(f"{k}: {v}")
+        logger.info(f"GPU devices: {os.environ['CUDA_VISIBLE_DEVICES']}")
+        logger.info(f"===================================")
 
     conf['filter_list'] = get_filter_modules(conf)
 
-    print("Initialize MPI environment")
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    nprocs = comm.Get_size()
-    status = MPI.Status()
-    mem = np.zeros(1024 * 10 * 1024)
-    MPI.Attach_buffer(mem)
+    chem_model = loaded_model(conf['model_weight'], logger, conf)
 
-    print('load the psre-trained rnn model and define the property optimized')
-    chem_model = loaded_model(conf)
-
-    print('Run MPChemTS')
+    logger.info(f'Run MPChemTS [rank {rank}]')
     comm.barrier()
     search = p_mcts(comm, chem_model, reward_calculator, conf)
     if conf['search_type'] == 'TDS_UCT':
@@ -145,22 +167,14 @@ if __name__ == "__main__":
     elif conf['search_type'] == 'MP_MCTS':
         search.MP_MCTS()
     else:
-        print('[ERROR] Select a search type from [TDS_UCT, TDS_df_UCT, MP_MCTS]')
+        logger.error('[ERROR] Select a search type from [TDS_UCT, TDS_df_UCT, MP_MCTS]')
         sys.exit(1)
-
-    print("Done MCTS execution")
 
     comm.barrier()
 
+    logger.info(f"Done MCTS execution [rank {rank}]")
+
     search.gather_results()
     if rank==0:
+        logger.info(f"Gather each rank result")
         search.flush()
-
-#    output_score_path = os.path.join(conf['output_dir'], f"logp_score{rank}.csv")
-#    with open(output_score_path, 'w', newline='') as f:
-#        writer = csv.writer(f, delimiter='\n')
-#        writer.writerow(score)
-#    output_mol_path = os.path.join(conf['output_dir'], f"logp_mol{rank}.csv")
-#    with open(output_mol_path, 'w', newline='') as f:
-#        writer = csv.writer(f, delimiter='\n')
-#        writer.writerow(mol)
