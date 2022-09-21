@@ -6,6 +6,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
 import re
 import sys
 import pickle
+import requests
 import yaml
 
 import numpy as np
@@ -97,6 +98,16 @@ if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1' if args.gpu is None else args.gpu
     if not conf['debug']:
         RDLogger.DisableLog("rdApp.*")
+
+    # download additional data if files don't exist
+    if not os.path.exists('data/sascorer.py'):
+        url = 'https://raw.githubusercontent.com/rdkit/rdkit/master/Contrib/SA_Score/sascorer.py'
+        with open('data/sascorer.py', 'w') as f:
+            f.write(requests.get(url).text)
+    if not os.path.exists('data/fpscores.pkl.gz'):
+        url = 'https://raw.githubusercontent.com/rdkit/rdkit/master/Contrib/SA_Score/fpscores.pkl.gz'
+        with open('data/fpscores.pkl.gz', 'wb') as f:
+            f.write(requests.get(url).content)
 
     with open(conf['token'], 'rb') as f:
         tokens = pickle.load(f)

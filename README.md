@@ -21,9 +21,6 @@ python3.7 -m venv .venv
 source .venv/bin/activate
 pip install chemtsv2
 pip install mpi4py==3.0.3
-
-# If you use SAScore filter, please retrieve files for SAscore calculations
-wget -P data https://raw.githubusercontent.com/rdkit/rdkit/master/Contrib/SA_Score/{fpscores.pkl.gz,sascorer.py}
 ```
 
 ## Run parallel MCTS algorithms for molecular design
