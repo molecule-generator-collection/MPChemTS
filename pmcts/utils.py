@@ -51,11 +51,11 @@ def build_smiles_from_tokens(all_posible, val):  # Can be merged with ChemTSv2
     return ''.join(generate_tokens)
 
 
-def get_model_structure_info(model_json):
+def get_model_structure_info(model_json, logger):
     with open(model_json, 'r') as f:
         loaded_model_json = f.read()
     loaded_model = model_from_json(loaded_model_json)
-    print(f"Loaded model_json from {model_json}")
+    logger.debug(f"Loaded model_json from {model_json}")
     input_shape = None
     vocab_size = None
     output_size = None
@@ -68,13 +68,13 @@ def get_model_structure_info(model_json):
         if layer.get('class_name') == 'TimeDistributed':
             output_size = config['layer']['config']['units']
     if input_shape is None or vocab_size is None or output_size is None:
-        print('Confirm if the version of Tensorflow is 2.5. If so, please consult with ChemTSv2 developers on the GitHub repository. At that time, please attach the file specified as `model_json`')
+        logger.error('Confirm if the version of Tensorflow is 2.5. If so, please consult with ChemTSv2 developers on the GitHub repository. At that time, please attach the file specified as `model_json`')
         sys.exit()
             
     return input_shape, vocab_size, output_size
 
 
-def loaded_model(conf):
+def loaded_model(model_weight, logger, conf):
     model = Sequential()
     model.add(Embedding(input_dim=conf['rnn_vocab_size'], output_dim=conf['rnn_vocab_size'],
                         batch_size=1, mask_zero=False))
@@ -82,7 +82,8 @@ def loaded_model(conf):
                   return_sequences=True, stateful=True))
     model.add(GRU(256, activation='tanh', return_sequences=False, stateful=True))
     model.add(Dense(conf['rnn_output_size'], activation='softmax'))
-    model.load_weights(conf['model_weight'])
+    model.load_weights(model_weight)
+    logger.debug(f"Loaded model_weight from {model_weight}")
 
     return model
 
