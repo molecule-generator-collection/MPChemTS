@@ -1,10 +1,11 @@
-import numpy as np
 from math import log, sqrt
 import random as pr
 
+import numpy as np
 from rdkit import Chem
 
 from pmcts.utils import chem_kn_simulation, build_smiles_from_tokens, expanded_node, has_passed_through_filters
+
 
 class Tree_Node():
     def __init__(self, state, parentNode=None, reward_calculator=None, conf=None):

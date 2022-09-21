@@ -1,5 +1,7 @@
 from math import log, sqrt
+
 import numpy as np
+
 
 def backtrack_tdsdfuct(info_table,reward):
     for path_ucb in reversed(info_table):

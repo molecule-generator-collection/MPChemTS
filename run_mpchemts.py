@@ -1,18 +1,17 @@
 import argparse
-import csv
 from importlib import import_module
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
+import pickle
 import re
 import sys
-import pickle
+
+from mpi4py import MPI
+import numpy as np
+from rdkit import RDLogger
 import requests
 import yaml
 
-import numpy as np
-from rdkit import RDLogger
-
-from mpi4py import MPI
 from pmcts.utils import loaded_model, get_model_structure_info
 from pmcts.parallel_mcts import p_mcts
 
