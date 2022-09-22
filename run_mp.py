@@ -9,6 +9,7 @@ import sys
 
 from mpi4py import MPI
 import numpy as np
+from numpy.random import default_rng
 from rdkit import RDLogger
 import requests
 import yaml
@@ -59,7 +60,7 @@ def get_logger(level, save_dir):
 def set_default_config(conf):
     conf.setdefault('c_val', 1.0)
     conf.setdefault('output_dir', 'result/example01')
-    conf.setdefault('random_seed', 3)
+    conf.setdefault('fix_random_seed', False)
     conf.setdefault('token', 'model/tokens.pkl')
 
     conf.setdefault('model_json', 'model.tf25.json')
@@ -127,6 +128,9 @@ def main():
     logger = get_logger(log_level, conf["output_dir"])
     if not conf['debug']:
         RDLogger.DisableLog("rdApp.*")
+    
+    if args.debug:
+        conf['fix_random_seed'] = True
 
     # download additional data if files don't exist
     if not os.path.exists('data/sascorer.py'):
@@ -154,6 +158,8 @@ def main():
         logger.info(f"===================================")
 
     conf['filter_list'] = get_filter_modules(conf)
+
+    conf['random_generator'] = default_rng(1234) if conf['fix_random_seed'] else default_rng()
 
     chem_model = loaded_model(conf['model_weight'], logger, conf)
 

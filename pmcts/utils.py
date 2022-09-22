@@ -36,7 +36,7 @@ def chem_kn_simulation(model, state, val, conf):  # Can be merged with ChemTSv2
     while not get_int[-1] == val.index(end):
         preds = model.predict_on_batch(x)
         state_pred = np.squeeze(preds)
-        next_int = np.random.choice(range(len(state_pred)), p=state_pred)
+        next_int = conf['random_generator'].choice(range(len(state_pred)), p=state_pred)
         get_int.append(next_int)
         x = np.reshape([next_int], (1, 1))
         if len(get_int) > conf['max_len']:

@@ -3,7 +3,6 @@ from copy import deepcopy
 from enum import Enum
 from math import log, sqrt
 import os
-import random
 import sys
 import time
 
@@ -72,7 +71,7 @@ class Tree_Node():
         self.childucb = ucb
         m = np.amax(ucb)
         indices = np.nonzero(ucb == m)[0]
-        ind = random.choice(indices)
+        ind = self.conf['random_generator'].choice(indices)
         self.childNodes[ind].num_thread_visited += 1
         self.num_thread_visited += 1
         return ind, self.childNodes[ind]
@@ -147,7 +146,7 @@ class p_mcts:
         self.logger = logger
         # Initialize HashTable
         root_node = Tree_Node(state=['&'], reward_calculator=reward_calculator, conf=conf)
-        random.seed(3)
+        #random.seed(3)
         self.hsm = HashTable(self.nprocs, root_node.val, root_node.max_len, len(root_node.val))
 
         self.output_path = os.path.join(conf['output_dir'], f"result_C{conf['c_val']}.csv")
@@ -311,7 +310,7 @@ class p_mcts:
                         #node.state = message[0]
                         if node.state == ['&']:
                             node.expansion(self.chem_model)
-                            m = random.choice(node.expanded_nodes)
+                            m = self.conf['random_generator'].choice(node.expanded_nodes)
                             n = node.addnode(m)
                             self.hsm.insert(Item(node.state, node))
                             _, dest = self.hsm.hashing(n.state)
@@ -344,7 +343,7 @@ class p_mcts:
                         #      node.num_thread_visited, node.wins)
                         if node.state == ['&']:
                             if node.expanded_nodes != []:
-                                m = random.choice(node.expanded_nodes)
+                                m = self.conf['random_generator'].choice(node.expanded_nodes)
                                 n = node.addnode(m)
                                 self.hsm.insert(Item(node.state, node))
                                 _, dest = self.hsm.hashing(n.state)
@@ -360,7 +359,7 @@ class p_mcts:
                             if len(node.state) < node.max_len:
                                 if node.state[-1] != '\n':
                                     if node.expanded_nodes != []:
-                                        m = random.choice(node.expanded_nodes)
+                                        m = self.conf['random_generator'].choice(node.expanded_nodes)
                                         n = node.addnode(m)
                                         self.hsm.insert(Item(node.state, node))
                                         _, dest = self.hsm.hashing(n.state)
@@ -368,7 +367,7 @@ class p_mcts:
                                     else:
                                         if node.check_childnode == []:
                                             node.expansion(self.chem_model)
-                                            m = random.choice(
+                                            m = self.conf['random_generator'].choice(
                                                 node.expanded_nodes)
                                             n = node.addnode(m)
                                             self.hsm.insert(Item(node.state, node))
@@ -470,7 +469,7 @@ class p_mcts:
                         #print ("not in table info_table:",info_table)
                         if node.state == ['&']:
                             node.expansion(self.chem_model)
-                            m = random.choice(node.expanded_nodes)
+                            m = self.conf['random_generator'].choice(node.expanded_nodes)
                             n = node.addnode(m)
                             self.hsm.insert(Item(node.state, node))
                             _, dest = self.hsm.hashing(n.state)
@@ -506,7 +505,7 @@ class p_mcts:
                         if node.state == ['&']:
                             # print ("in table root:",node.state,node.path_ucb,len(node.state),len(node.path_ucb))
                             if node.expanded_nodes != []:
-                                m = random.choice(node.expanded_nodes)
+                                m = self.conf['random_generator'].choice(node.expanded_nodes)
                                 n = node.addnode(m)
                                 self.hsm.insert(Item(node.state, node))
                                 _, dest = self.hsm.hashing(n.state)
@@ -526,7 +525,7 @@ class p_mcts:
                             if len(node.state) < node.max_len:
                                 if node.state[-1] != '\n':
                                     if node.expanded_nodes != []:
-                                        m = random.choice(node.expanded_nodes)
+                                        m = self.conf['random_generator'].choice(node.expanded_nodes)
                                         n = node.addnode(m)
                                         self.hsm.insert(Item(node.state, node))
                                         _, dest = self.hsm.hashing(n.state)
@@ -534,7 +533,7 @@ class p_mcts:
                                     else:
                                         if node.check_childnode == []:
                                             node.expansion(self.chem_model)
-                                            m = random.choice(
+                                            m = self.conf['random_generator'].choice(
                                                 node.expanded_nodes)
                                             n = node.addnode(m)
                                             self.hsm.insert(Item(node.state, node))
@@ -645,7 +644,7 @@ class p_mcts:
                         node = Tree_Node(state=message[0], reward_calculator=self.reward_calculator, conf=self.conf)
                         if node.state == ['&']:
                             node.expansion(self.chem_model)
-                            m = random.choice(node.expanded_nodes)
+                            m = self.conf['random_generator'].choice(node.expanded_nodes)
                             n = node.addnode(m)
                             self.hsm.insert(Item(node.state, node))
                             _, dest = self.hsm.hashing(n.state)
@@ -672,7 +671,7 @@ class p_mcts:
                         if node.state == ['&']:
                             # print ("in table root:",node.state,node.path_ucb,len(node.state),len(node.path_ucb))
                             if node.expanded_nodes != []:
-                                m = random.choice(node.expanded_nodes)
+                                m = self.conf['random_generator'].choice(node.expanded_nodes)
                                 n = node.addnode(m)
                                 self.hsm.insert(Item(node.state, node))
                                 _, dest = self.hsm.hashing(n.state)
@@ -689,7 +688,7 @@ class p_mcts:
                             if len(node.state) < node.max_len:
                                 if node.state[-1] != '\n':
                                     if node.expanded_nodes != []:
-                                        m = random.choice(node.expanded_nodes)
+                                        m = self.conf['random_generator'].choice(node.expanded_nodes)
                                         n = node.addnode(m)
                                         self.hsm.insert(Item(node.state, node))
                                         _, dest = self.hsm.hashing(n.state)
@@ -697,7 +696,7 @@ class p_mcts:
                                     else:
                                         if node.check_childnode == []:
                                             node.expansion(self.chem_model)
-                                            m = random.choice(node.expanded_nodes)
+                                            m = self.conf['random_generator'].choice(node.expanded_nodes)
                                             n = node.addnode(m)
                                             self.hsm.insert(Item(node.state, node))
                                             _, dest = self.hsm.hashing(n.state)
