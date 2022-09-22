@@ -145,6 +145,7 @@ class p_mcts:
         self.reward_calculator = reward_calculator
         self.conf = conf
         self.logger = logger
+        self.threshold = 3600 * conf['hours']
         # Initialize HashTable
         root_node = Tree_Node(state=['&'], reward_calculator=reward_calculator, conf=conf)
         random.seed(conf['zobrist_hash_seed'])
@@ -277,7 +278,7 @@ class p_mcts:
                 jobq.appendleft(root_job)
         while not timeup:
             if self.rank == 0:
-                if self.elapsed_time() > 600:
+                if self.elapsed_time() > self.threshold:
                     timeup = True
                     for dest in range(1, self.nprocs):
                         dummy_data = tag = JobType.TIMEUP.value
@@ -439,7 +440,7 @@ class p_mcts:
                 jobq.appendleft(root_job)
         while not timeup:
             if self.rank == 0:
-                if self.elapsed_time() > 600:
+                if self.elapsed_time() > self.threshold:
                     timeup = True
                     for dest in range(1, self.nprocs):
                         dummy_data = tag = JobType.TIMEUP.value
@@ -618,7 +619,7 @@ class p_mcts:
                 jobq.appendleft(root_job)
         while not timeup:
             if self.rank == 0:
-                if self.elapsed_time() > 60: # default 60s
+                if self.elapsed_time() > self.threshold:
                     timeup = True
                     for dest in range(1, self.nprocs):
                         dummy_data = tag = JobType.TIMEUP.value
