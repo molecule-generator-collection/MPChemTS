@@ -3,6 +3,7 @@ from copy import deepcopy
 from enum import Enum
 from math import log, sqrt
 import os
+import random  # only for Hash table initialization
 import sys
 import time
 
@@ -146,7 +147,7 @@ class p_mcts:
         self.logger = logger
         # Initialize HashTable
         root_node = Tree_Node(state=['&'], reward_calculator=reward_calculator, conf=conf)
-        #random.seed(3)
+        random.seed(conf['zobrist_hash_seed'])
         self.hsm = HashTable(self.nprocs, root_node.val, root_node.max_len, len(root_node.val))
 
         self.output_path = os.path.join(conf['output_dir'], f"result_C{conf['c_val']}.csv")

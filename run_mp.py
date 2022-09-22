@@ -60,6 +60,7 @@ def get_logger(level, save_dir):
 def set_default_config(conf):
     conf.setdefault('c_val', 1.0)
     conf.setdefault('output_dir', 'result/example01')
+    conf.setdefault('zobrist_hash_seed', 3)
     conf.setdefault('fix_random_seed', False)
     conf.setdefault('token', 'model/tokens.pkl')
 
