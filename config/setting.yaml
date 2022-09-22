@@ -34,3 +34,4 @@ ring_size_filter:
   threshold: 6
 
 c_val: 1.0
+hours: 0.02
