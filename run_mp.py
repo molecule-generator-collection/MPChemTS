@@ -106,7 +106,7 @@ def get_filter_modules(conf):
     return module_list
 
 
-if __name__ == "__main__":
+def main():
     # Initialize MPI environment
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
@@ -178,3 +178,7 @@ if __name__ == "__main__":
     if rank==0:
         logger.info(f"Gather each rank result")
         search.flush()
+
+
+if __name__ == "__main__":
+    main()

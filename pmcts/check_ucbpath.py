@@ -44,7 +44,6 @@ def compare_ucb_tdsdfuct(info_table,pnode):
     return back_flag
 
 
-
 def compare_ucb_mpmcts(pnode):
     #print ("check info_table:",info_table)
     for path_ucb in pnode.path_ucb:
@@ -62,8 +61,6 @@ def compare_ucb_mpmcts(pnode):
     return back_flag
 
 
-
-
 def update_selection_ucbtable_tdsdfuct(node_table,node, ind):
     table = []
     final_table = []
@@ -79,6 +76,7 @@ def update_selection_ucbtable_tdsdfuct(node_table,node, ind):
         final_table.extend(node_table)
         final_table.append(table)
     return final_table
+
 
 def update_selection_ucbtable_mpmcts(node, ind):
     table = []

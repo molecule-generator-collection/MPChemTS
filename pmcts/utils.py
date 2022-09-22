@@ -51,7 +51,7 @@ def build_smiles_from_tokens(all_posible, val):  # Can be merged with ChemTSv2
     return ''.join(generate_tokens)
 
 
-def get_model_structure_info(model_json, logger):
+def get_model_structure_info(model_json, logger):  # Can be merged with ChemTSv2
     with open(model_json, 'r') as f:
         loaded_model_json = f.read()
     loaded_model = model_from_json(loaded_model_json)
@@ -74,7 +74,7 @@ def get_model_structure_info(model_json, logger):
     return input_shape, vocab_size, output_size
 
 
-def loaded_model(model_weight, logger, conf):
+def loaded_model(model_weight, logger, conf):  # Can be merged with ChemTSv2
     model = Sequential()
     model.add(Embedding(input_dim=conf['rnn_vocab_size'], output_dim=conf['rnn_vocab_size'],
                         batch_size=1, mask_zero=False))
@@ -88,7 +88,7 @@ def loaded_model(model_weight, logger, conf):
     return model
 
 
-def has_passed_through_filters(smiles, conf):
+def has_passed_through_filters(smiles, conf):  # Can be merged with ChemTSv2
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:  # default check
         return False
