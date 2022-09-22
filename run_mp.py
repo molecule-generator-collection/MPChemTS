@@ -159,7 +159,7 @@ def main():
 
     logger.info(f'Run MPChemTS [rank {rank}]')
     comm.barrier()
-    search = p_mcts(comm, chem_model, reward_calculator, conf)
+    search = p_mcts(comm, chem_model, reward_calculator, conf, logger)
     if conf['search_type'] == 'TDS_UCT':
         search.TDS_UCT()
     elif conf['search_type'] == 'TDS_df_UCT':
@@ -176,8 +176,8 @@ def main():
 
     search.gather_results()
     if rank==0:
-        logger.info(f"Gather each rank result")
         search.flush()
+        logger.info("FINISH!")
 
 
 if __name__ == "__main__":

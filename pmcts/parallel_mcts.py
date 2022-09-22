@@ -136,7 +136,7 @@ class p_mcts:
     """
     # todo: use generated_dict
 
-    def __init__(self, communicator, chem_model, reward_calculator, conf):
+    def __init__(self, communicator, chem_model, reward_calculator, conf, logger):
         self.comm = communicator
         self.rank = self.comm.Get_rank()
         self.nprocs = self.comm.Get_size()
@@ -144,13 +144,14 @@ class p_mcts:
         self.chem_model = chem_model
         self.reward_calculator = reward_calculator
         self.conf = conf
+        self.logger = logger
         # Initialize HashTable
         root_node = Tree_Node(state=['&'], reward_calculator=reward_calculator, conf=conf)
         random.seed(3)
         self.hsm = HashTable(self.nprocs, root_node.val, root_node.max_len, len(root_node.val))
 
+        self.output_path = os.path.join(conf['output_dir'], f"result_C{conf['c_val']}.csv")
         if self.rank == 0:
-            self.output_path = os.path.join(conf['output_dir'], f"result_C{conf['c_val']}.csv")
             if os.path.exists(self.output_path):
                 print(f"[ERROR] {self.output_path} already exists. Please specify a different file name.", file=sys.stderr, flush=True)
                 self.comm.Abort()
@@ -215,6 +216,8 @@ class p_mcts:
 
     def gather_results(self):
         status = MPI.Status()
+        if self.rank == 0:
+            self.logger.info(f"Gather each rank result...")
         for id in range(1, self.nprocs):
             if self.rank == 0:
                 (valid_smiles_list, depth_list, reward_values_list, elapsed_time_list,
@@ -246,7 +249,8 @@ class p_mcts:
             df.to_csv(self.output_path, mode='a', index=False, header=False)
         else:
             df.to_csv(self.output_path, mode='w', index=False)
-        # self.logger.info(f"save results at {self.output_path}")
+        if self.rank == 0:
+            self.logger.info(f"Save a result at {self.output_path}")
 
         self.generated_id_list.clear()
         self.valid_smiles_list.clear()
