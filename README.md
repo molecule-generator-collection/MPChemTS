@@ -15,12 +15,22 @@ The code was tested on Linux and MacOS, we recommend using anaconda to install t
 
 NOTE: You need to run MPChemTS on a server where OpenMPI or MPICH is installed. If you can't find `mpiexec` command, please consult your server administrator to install such an MPI library.
 
+#### Installation on a server WITH a MPI environment
+
 ```bash
 cd YOUR_WORKSPACE
 python3.7 -m venv .venv
 source .venv/bin/activate
 pip install chemtsv2
 pip install mpi4py==3.0.3
+```
+
+#### Installation on a server WITHOUT a MPI environment
+
+```bash
+conda create -n mpchem python=3.7
+conda install -c conda-forge openmpi cxx-compiler mpi mpi4py=3.0.3
+pip install chemtsv2
 ```
 
 ## Run parallel MCTS algorithms for molecular design
