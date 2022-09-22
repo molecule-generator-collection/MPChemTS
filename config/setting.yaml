@@ -1,5 +1,4 @@
 output_dir: result/example01
-random_seed: 3
 token: model/tokens.pkl
 search_type: MP_MCTS
 
