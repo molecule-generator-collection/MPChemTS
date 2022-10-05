@@ -392,7 +392,7 @@ class p_mcts:
                                     score = -1
                                     if is_valid_smi:
                                         self.record_result(smiles=smi, depth=len(node.state), reward=score,
-                                                           gen_id=gen_id, raw_reward_list=[score], filter_flag=filter_flag)
+                                                           gen_id=gen_id, raw_reward_list=values_list, filter_flag=filter_flag)
                                     # backpropagation on local memory
                                     node.update_local_node(score)
                                     self.hsm.insert(Item(node.state, node))
