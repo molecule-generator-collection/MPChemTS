@@ -98,12 +98,20 @@ class Tree_Node():
         self.wins += score
         self.reward = score
 
-    def simulation(self, chem_model, state, gen_id):
+    def simulation(self, chem_model, state, gen_id, generated_dict):
         filter_flag = 0
 
         self.conf['gen_id'] = gen_id
         all_posible = chem_kn_simulation(chem_model, state, self.val, self.conf)
         smi = build_smiles_from_tokens(all_posible, self.val)
+
+        if smi in generated_dict:
+            values_list = generated_dict[smi][0]
+            score = generated_dict[smi][1]
+            filter_flag = generated_dict[smi][2]
+            valid_flag = 1  # because only valid SMILES strings are stored in generated_dict
+            return values_list, score, smi, filter_flag, valid_flag
+
         if has_passed_through_filters(smi, self.conf):
             mol = Chem.MolFromSmiles(smi)
             values_list = [f(mol) for f in self.reward_calculator.get_objective_functions(self.conf)]
@@ -120,6 +128,8 @@ class Tree_Node():
                 valid_flag = 1
             score = -1000 / (1 + 1000)
             filter_flag = 0
+        if valid_flag:
+            generated_dict[smi] = [values_list, score, filter_flag]
         return values_list, score, smi, filter_flag, valid_flag
 
     def backpropagation(self, cnode):
@@ -325,7 +335,7 @@ class p_mcts:
                             if len(node.state) < node.max_len:
                                 gen_id = self.get_generated_id()
                                 values_list, score, smi, filter_flag, is_valid_smi = node.simulation(
-                                    self.chem_model, node.state, gen_id)
+                                    self.chem_model, node.state, gen_id, self.generated_dict)
                                 if is_valid_smi:
                                     self.record_result(smiles=smi, depth=len(node.state), reward=score,
                                                        gen_id=gen_id, raw_reward_list=values_list, filter_flag=filter_flag)
@@ -388,7 +398,7 @@ class p_mcts:
                                 else:
                                     gen_id = self.get_generated_id()
                                     values_list, score, smi, filter_flag, is_valid_smi = node.simulation(
-                                        self.chem_model, node.state, gen_id)
+                                        self.chem_model, node.state, gen_id, self.generated_dict)
                                     score = -1
                                     if is_valid_smi:
                                         self.record_result(smiles=smi, depth=len(node.state), reward=score,
@@ -483,7 +493,7 @@ class p_mcts:
                             if len(node.state) < node.max_len:
                                 gen_id = self.get_generated_id()
                                 values_list, score, smi, filter_flag, is_valid_smi = node.simulation(
-                                    self.chem_model, node.state, gen_id)
+                                    self.chem_model, node.state, gen_id, self.generated_dict)
                                 if is_valid_smi:
                                     self.record_result(smiles=smi, depth=len(node.state), reward=score,
                                                        gen_id=gen_id, raw_reward_list=values_list, filter_flag=filter_flag)
@@ -555,7 +565,7 @@ class p_mcts:
                                 else:
                                     gen_id = self.get_generated_id()
                                     value_list, score, smi, filter_flag, is_valid_smi = node.simulation(
-                                        self.chem_model, node.state, gen_id)
+                                        self.chem_model, node.state, gen_id, self.generated_dict)
                                     score = -1
                                     if is_valid_smi:
                                         self.record_result(smiles=smi, depth=len(node.state), reward=score,
@@ -658,7 +668,7 @@ class p_mcts:
                             if len(node.state) < node.max_len:
                                 gen_id = self.get_generated_id()
                                 values_list, score, smi, filter_flag, is_valid_smi = node.simulation(
-                                    self.chem_model, node.state, gen_id)
+                                    self.chem_model, node.state, gen_id, self.generated_dict)
                                 if is_valid_smi:
                                     self.record_result(smiles=smi, depth=len(node.state), reward=score,
                                                        gen_id=gen_id ,raw_reward_list=values_list, filter_flag=filter_flag)
@@ -717,7 +727,7 @@ class p_mcts:
                                 else:
                                     gen_id = self.get_generated_id()
                                     values_list, score, smi, filter_flag, is_valid_smi = node.simulation(
-                                        self.chem_model, node.state, gen_id)
+                                        self.chem_model, node.state, gen_id, self.generated_dict)
                                     score = -1
                                     if is_valid_smi:
                                         self.record_result(smiles=smi, depth=len(node.state), reward=score,
