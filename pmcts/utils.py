@@ -9,7 +9,7 @@ import numpy as np
 from rdkit import Chem
 
 
-def expanded_node(model, state, val, threshold=0.95):  # Can be merged with ChemTSv2
+def expanded_node(model, state, val, logger, threshold=0.95):  # Can be merged with ChemTSv2
     get_int = [val.index(state[j]) for j in range(len(state))]
     x = np.reshape(get_int, (1, len(get_int)))
     model.reset_states()
@@ -21,6 +21,7 @@ def expanded_node(model, state, val, threshold=0.95):  # Can be merged with Chem
         if v > threshold:
             i = i if i != 0 else 1  # return one index if the first prediction value exceeds the threshold.
             break 
+    logger.debug(f"indices for expansion: {sorted_idxs[:i]}")
     return sorted_idxs[:i]
 
 

@@ -77,8 +77,8 @@ class Tree_Node():
         self.num_thread_visited += 1
         return ind, self.childNodes[ind]
 
-    def expansion(self, model):
-        node_idxs = expanded_node(model, self.state, self.val)
+    def expansion(self, model, logger):
+        node_idxs = expanded_node(model, self.state, self.val, logger)
         self.check_childnode.extend(node_idxs)
         self.expanded_nodes.extend(node_idxs)
 
@@ -324,7 +324,7 @@ class p_mcts:
                         node = Tree_Node(state=message[0], reward_calculator=self.reward_calculator, conf=self.conf)
                         #node.state = message[0]
                         if node.state == ['&']:
-                            node.expansion(self.chem_model)
+                            node.expansion(self.chem_model, self.logger)
                             m = self.conf['random_generator'].choice(node.expanded_nodes)
                             n = node.addnode(m)
                             self.hsm.insert(Item(node.state, node))
@@ -381,7 +381,7 @@ class p_mcts:
                                         self.send_message(n, dest, tag=JobType.SEARCH.value)
                                     else:
                                         if node.check_childnode == []:
-                                            node.expansion(self.chem_model)
+                                            node.expansion(self.chem_model, self.logger)
                                             m = self.conf['random_generator'].choice(
                                                 node.expanded_nodes)
                                             n = node.addnode(m)
@@ -483,7 +483,7 @@ class p_mcts:
                         info_table = message[5]
                         #print ("not in table info_table:",info_table)
                         if node.state == ['&']:
-                            node.expansion(self.chem_model)
+                            node.expansion(self.chem_model, self.logger)
                             m = self.conf['random_generator'].choice(node.expanded_nodes)
                             n = node.addnode(m)
                             self.hsm.insert(Item(node.state, node))
@@ -547,7 +547,7 @@ class p_mcts:
                                         self.send_message(n, dest, tag=JobType.SEARCH.value)
                                     else:
                                         if node.check_childnode == []:
-                                            node.expansion(self.chem_model)
+                                            node.expansion(self.chem_model, self.logger)
                                             m = self.conf['random_generator'].choice(
                                                 node.expanded_nodes)
                                             n = node.addnode(m)
@@ -658,7 +658,7 @@ class p_mcts:
                     if self.hsm.search_table(message[0]) == None:
                         node = Tree_Node(state=message[0], reward_calculator=self.reward_calculator, conf=self.conf)
                         if node.state == ['&']:
-                            node.expansion(self.chem_model)
+                            node.expansion(self.chem_model, self.logger)
                             m = self.conf['random_generator'].choice(node.expanded_nodes)
                             n = node.addnode(m)
                             self.hsm.insert(Item(node.state, node))
@@ -712,7 +712,7 @@ class p_mcts:
                                         self.send_message(n, dest, tag=JobType.SEARCH.value)
                                     else:
                                         if node.check_childnode == []:
-                                            node.expansion(self.chem_model)
+                                            node.expansion(self.chem_model, self.logger)
                                             m = self.conf['random_generator'].choice(node.expanded_nodes)
                                             n = node.addnode(m)
                                             self.hsm.insert(Item(node.state, node))
