@@ -12,8 +12,9 @@ import numpy as np
 import pandas as pd
 from rdkit import Chem
 
-from pmcts.check_ucbpath import backtrack_tdsdfuct, backtrack_mpmcts, compare_ucb_tdsdfuct, compare_ucb_mpmcts, update_selection_ucbtable_mpmcts, update_selection_ucbtable_tdsdfuct
-from pmcts.zobrist_hash import Item, HashTable
+from pmcts.mp_utils import (
+    backtrack_tdsdfuct, backtrack_mpmcts, compare_ucb_tdsdfuct, compare_ucb_mpmcts, update_selection_ucbtable_mpmcts, update_selection_ucbtable_tdsdfuct,
+    Item, HashTable)
 from pmcts.utils import chem_kn_simulation, build_smiles_from_tokens, expanded_node, has_passed_through_filters
 
 """
