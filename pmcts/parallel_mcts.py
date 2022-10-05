@@ -109,15 +109,18 @@ class Tree_Node():
             values_list = [f(mol) for f in self.reward_calculator.get_objective_functions(self.conf)]
             score = self.reward_calculator.calc_reward_from_objective_values(values=values_list, conf=self.conf)
             filter_flag = 1
+            valid_flag = 1
         else:
             mol = Chem.MolFromSmiles(smi)
             if mol is None:
                 values_list = [-999 for _ in self.reward_calculator.get_objective_functions(self.conf)]
+                valid_flag = 0
             else:
                 values_list = [f(mol) for f in self.reward_calculator.get_objective_functions(self.conf)]
+                valid_flag = 1
             score = -1000 / (1 + 1000)
             filter_flag = 0
-        return values_list, score, smi, filter_flag
+        return values_list, score, smi, filter_flag, valid_flag
 
     def backpropagation(self, cnode):
         self.wins += cnode.reward
@@ -321,11 +324,11 @@ class p_mcts:
                             # or max_len_wavelength :
                             if len(node.state) < node.max_len:
                                 gen_id = self.get_generated_id()
-                                values_list, score, mol, filter_flag = node.simulation(
+                                values_list, score, smi, filter_flag, is_valid_smi = node.simulation(
                                     self.chem_model, node.state, gen_id)
-                                # TODO: skip invalid SMILES to record
-                                self.record_result(smiles=mol, depth=len(node.state), reward=score,
-                                                   gen_id=gen_id, raw_reward_list=values_list, filter_flag=filter_flag)
+                                if is_valid_smi:
+                                    self.record_result(smiles=smi, depth=len(node.state), reward=score,
+                                                       gen_id=gen_id, raw_reward_list=values_list, filter_flag=filter_flag)
                                 # backpropagation on local memory
                                 node.update_local_node(score)
                                 self.hsm.insert(Item(node.state, node))
@@ -384,11 +387,12 @@ class p_mcts:
 
                                 else:
                                     gen_id = self.get_generated_id()
-                                    values_list, score, mol, filter_flag = node.simulation(
+                                    values_list, score, smi, filter_flag, is_valid_smi = node.simulation(
                                         self.chem_model, node.state, gen_id)
                                     score = -1
-                                    self.record_result(smiles=mol, depth=len(node.state), reward=score,
-                                                       gen_id=gen_id, raw_reward_list=[score], filter_flag=filter_flag)
+                                    if is_valid_smi:
+                                        self.record_result(smiles=smi, depth=len(node.state), reward=score,
+                                                           gen_id=gen_id, raw_reward_list=[score], filter_flag=filter_flag)
                                     # backpropagation on local memory
                                     node.update_local_node(score)
                                     self.hsm.insert(Item(node.state, node))
@@ -478,10 +482,11 @@ class p_mcts:
                         else:
                             if len(node.state) < node.max_len:
                                 gen_id = self.get_generated_id()
-                                values_list, score, mol, filter_flag = node.simulation(
+                                values_list, score, smi, filter_flag, is_valid_smi = node.simulation(
                                     self.chem_model, node.state, gen_id)
-                                self.record_result(smiles=mol, depth=len(node.state), reward=score,
-                                                   gen_id=gen_id, raw_reward_list=values_list, filter_flag=filter_flag)
+                                if is_valid_smi:
+                                    self.record_result(smiles=smi, depth=len(node.state), reward=score,
+                                                       gen_id=gen_id, raw_reward_list=values_list, filter_flag=filter_flag)
                                 node.update_local_node(score)
                                 # update infor table
                                 info_table = backtrack_tdsdfuct(
@@ -549,11 +554,12 @@ class p_mcts:
                                             self.send_message(childnode, dest, tag=JobType.SEARCH.value)
                                 else:
                                     gen_id = self.get_generated_id()
-                                    value_list, score, mol, filter_flag = node.simulation(
+                                    value_list, score, smi, filter_flag, is_valid_smi = node.simulation(
                                         self.chem_model, node.state, gen_id)
                                     score = -1
-                                    self.record_result(smiles=mol, depth=len(node.state), reward=score,
-                                                       gen_id=gen_id, raw_reward_list=value_list, filter_flag=filter_flag)
+                                    if is_valid_smi:
+                                        self.record_result(smiles=smi, depth=len(node.state), reward=score,
+                                                           gen_id=gen_id, raw_reward_list=value_list, filter_flag=filter_flag)
                                     node.update_local_node(score)
                                     info_table = backtrack_tdsdfuct(
                                         info_table, score)
@@ -651,9 +657,11 @@ class p_mcts:
                         else:
                             if len(node.state) < node.max_len:
                                 gen_id = self.get_generated_id()
-                                values_list, score, mol, filter_flag = node.simulation(self.chem_model, node.state, gen_id)
-                                self.record_result(smiles=mol, depth=len(node.state), reward=score,
-                                                   gen_id=gen_id ,raw_reward_list=values_list, filter_flag=filter_flag)
+                                values_list, score, smi, filter_flag, is_valid_smi = node.simulation(
+                                    self.chem_model, node.state, gen_id)
+                                if is_valid_smi:
+                                    self.record_result(smiles=smi, depth=len(node.state), reward=score,
+                                                       gen_id=gen_id ,raw_reward_list=values_list, filter_flag=filter_flag)
                                 node.update_local_node(score)
                                 self.hsm.insert(Item(node.state, node))
                                 _, dest = self.hsm.hashing(node.state[0:-1])
@@ -708,10 +716,12 @@ class p_mcts:
                                             self.send_message(childnode, dest, tag=JobType.SEARCH.value, data=ucb_table)
                                 else:
                                     gen_id = self.get_generated_id()
-                                    values_list, score, mol, filter_flag = node.simulation(self.chem_model, node.state, gen_id)
+                                    values_list, score, smi, filter_flag, is_valid_smi = node.simulation(
+                                        self.chem_model, node.state, gen_id)
                                     score = -1
-                                    self.record_result(smiles=mol, depth=len(node.state), reward=score,
-                                                       gen_id=gen_id,raw_reward_list=values_list, filter_flag=filter_flag)
+                                    if is_valid_smi:
+                                        self.record_result(smiles=smi, depth=len(node.state), reward=score,
+                                                           gen_id=gen_id,raw_reward_list=values_list, filter_flag=filter_flag)
                                     node.update_local_node(score)
                                     self.hsm.insert(Item(node.state, node))
                                     _, dest = self.hsm.hashing(node.state[0:-1])
